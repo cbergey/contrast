@@ -197,7 +197,7 @@ var experiment = {
 
 		for (i=0; i < experiment.shapes.length; i++) {
 			for (j =0; j < experiment.colors.length; j++) {
-				imgurl = "stim-images/object" + experiment.shapes[i] + experiment.colors[j] + ".jpg";
+				imgurl = "stim-images/object" + experiment.shapes[i] + experiment.colors[j] + "big.jpg";
 				imgname = "" + experiment.shapes[i] + experiment.colors[j];
 				image = preloadImage(imgurl);
 				imagedict[imgname] = image;
