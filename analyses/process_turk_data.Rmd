@@ -1,0 +1,46 @@
+---
+title: "contrast_exp1"
+output: html_document
+---
+
+```{r load_libraries}
+library(tidyverse)
+library(jsonlite)
+library(here)
+library(tidyboot)
+library(anonymizer)
+
+theme_set(theme_classic(base_size = 18))
+```
+
+```{r read_files}
+files <- list.files(here("raw_data/exp1/"), full.names = T)
+
+read_grice_file <- function(file) {
+  
+  json_out <- fromJSON(file)
+  id <- json_out$WorkerId
+  
+  raw_data <- json_out$answers$data 
+  cols <- str_remove_all(raw_data[1], " ") %>%
+    strsplit(., ",")
+  
+  data <- raw_data %>%
+    as_tibble() %>%
+    separate(value, into = cols[[1]], sep = ",") %>%
+    mutate(subid = id)
+}
+
+raw_data <- map(files, read_grice_file) %>%
+  bind_rows() 
+```
+
+```{r tidy_data}
+data <- raw_data %>%
+  filter(condition != " condition") %>%
+  mutate_at(vars(chosetarget, choselure, choseunique, adj), as.logical) %>%
+  mutate(subid = salt(subid, .seed = 400)) %>%
+  mutate(subid = as.numeric(as.factor(subid)))
+
+write_csv(data, here("data/exp1_turk_data.csv"))
+```

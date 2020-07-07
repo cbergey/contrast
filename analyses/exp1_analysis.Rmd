@@ -1,0 +1,54 @@
+---
+title: "exp1_analysis"
+output: html_document
+---
+
+```{r libraries}
+library(tidyverse)
+library(jsonlite)
+library(here)
+library(tidyboot)
+library(anonymizer)
+
+theme_set(theme_classic(base_size = 18))
+```
+
+```{r data}
+data <- read_csv(here("data/exp1_turk_data.csv"))
+
+keep_subjs <- data %>%
+  filter(searchtype == "colorcheck", chosetarget == TRUE, attncheckscore >= 6) %>%
+  group_by(subid) %>%
+  count() %>%
+  filter(n == 4)
+
+sub_data <- data %>%
+  filter(subid %in% keep_subjs$subid) %>%
+  gather(item, chose, chosetarget, choselure, choseunique) %>%
+  mutate(item = gsub("chose", "", item))
+
+mean_data <- sub_data %>%
+  filter(trialtype != 0) %>%
+  group_by(searchtype, adj, condition, item, subid) %>%
+  summarise(chose = mean(chose), n = n()) %>%
+  tidyboot_mean(chose) %>%
+  ungroup() %>%
+  mutate(adjective_used = factor(adj, labels = c("noun", "adjective noun")))
+```
+
+```{r}
+ggplot(mean_data %>% filter(searchtype == "uniquetarget", item == "target"), 
+       aes(x = adjective_used, color = condition)) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
+                  position = position_dodge(.5)) + 
+  ylab("Item chosen") + 
+  xlab("")
+
+ggplot(mean_data %>% filter(searchtype == "contrast", item != "unique"), 
+       aes(x = adjective_used, color = item)) +
+  facet_wrap(~ condition) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
+                  position = position_dodge(.5)) + 
+  ylab("Item chosen") + 
+  xlab("")
+```
