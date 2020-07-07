@@ -4,11 +4,16 @@ output: html_document
 ---
 
 ```{r libraries}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+               error = FALSE, cache = TRUE, tidy = FALSE)
+
 library(tidyverse)
 library(jsonlite)
 library(here)
 library(tidyboot)
 library(anonymizer)
+library(lme4)
+library(broom)
 
 theme_set(theme_classic(base_size = 18))
 ```
@@ -22,12 +27,16 @@ keep_subjs <- data %>%
   count() %>%
   filter(n == 4)
 
-sub_data <- data %>%
+sub_data_gathered <- data %>%
   filter(subid %in% keep_subjs$subid) %>%
   gather(item, chose, chosetarget, choselure, choseunique) %>%
-  mutate(item = gsub("chose", "", item))
+  mutate(item = gsub("chose", "", item),
+         subid = as.factor(subid))
 
-mean_data <- sub_data %>%
+sub_data <- data %>%
+  filter(subid %in% keep_subjs$subid)
+
+mean_data <- sub_data_gathered %>%
   filter(trialtype != 0) %>%
   group_by(searchtype, adj, condition, item, subid) %>%
   summarise(chose = mean(chose), n = n()) %>%
@@ -36,9 +45,9 @@ mean_data <- sub_data %>%
   mutate(adjective_used = factor(adj, labels = c("noun", "adjective noun")))
 ```
 
-```{r}
+```{r plots}
 ggplot(mean_data %>% filter(searchtype == "uniquetarget", item == "target"), 
-       aes(x = adjective_used, color = condition)) +
+       aes(x = condition, color = adjective_used)) +
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
                   position = position_dodge(.5)) + 
   ylab("Item chosen") + 
@@ -52,3 +61,61 @@ ggplot(mean_data %>% filter(searchtype == "contrast", item != "unique"),
   ylab("Item chosen") + 
   xlab("")
 ```
+
+```{r models}
+# in contrast trials w/an adjective, do people choose the target over the lure?
+# prereg'd
+chance_model <- sub_data %>%
+  filter(searchtype == "contrast", adj == TRUE, (chosetarget == TRUE || choselure == TRUE)) %>%
+  glmer(chosetarget ~ 1 + (1 | subid),
+        family = "binomial", data = .) %>%
+  tidy() %>%
+  filter(group == "fixed")
+chance_model
+
+# in only *color* contrast trials w/an adjective, do people choose the target over the lure?
+# not prereg'd
+color_model <- sub_data %>%
+  filter(searchtype == "contrast", adj == TRUE, condition == "color",
+         (chosetarget == TRUE || choselure == TRUE)) %>%
+  glmer(chosetarget ~ 1 + (1 | subid),
+        family = "binomial", data = .) %>%
+  tidy() %>%
+  filter(group == "fixed")
+color_model
+
+# in contrast trials w/an adjective, 
+# does the type of adjective matter in choosing target over lure?
+# prereg'd
+adj_type_model <- sub_data %>%
+  filter(searchtype == "contrast", adj == TRUE, (chosetarget == TRUE | choselure == TRUE)) %>%
+  glmer(chosetarget ~ condition + (1 | subid),
+        family = "binomial", data = .) %>%
+  tidy() %>%
+  filter(group == "fixed")
+
+adj_type_model
+
+# in contrast trials, do adj type and presence of an adj interact 
+# in determining target over lure choice?
+# not prereg'd
+adj_by_adjtype_model <- sub_data %>%
+  filter(searchtype == "contrast", (chosetarget == TRUE | choselure == TRUE)) %>%
+  glmer(chosetarget ~ condition * adj + (1 | subid),
+        family = "binomial", data = .) %>%
+  tidy() %>%
+  filter(group == "fixed")
+adj_by_adjtype_model
+
+# throw everything in the model
+# prereg'd
+full_model <- sub_data %>%
+  filter(searchtype == "contrast" | searchtype == "uniquetarget") %>%
+  glmer(chosetarget ~ adj * condition * searchtype + (searchtype * adj | subid),
+        family = "binomial", data = .) %>%
+  tidy() %>%
+  filter(group == "fixed")
+
+full_model
+```
+
