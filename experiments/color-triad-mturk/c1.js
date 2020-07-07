@@ -70,7 +70,7 @@ var shapes = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15",
 
 var colors = ["red", "blue", "green", "purple"];
 
-var words = ["dax", "blicket", "wug", "toma", "gade", "sprock","koba","zorp", "flib", "boti", "quen", "lomet"];
+var words = ["blicket", "wug", "toma", "gade", "sprock", "koba", "zorp", "lomet"];
 
 var trialtypes = [1,1,2,2,3,3,4,4];
 
@@ -333,7 +333,7 @@ var experiment = {
 						var targetobject = "#sobject" + experiment.targetpos;
 						experiment.objects[i][0] = "" + experiment.targetshape 
 						experiment.objects[i][1] = "" + experiment.targetcolor;
-						experiment.targetname = experiment.targetshape + experiment.targetcolor + ".jpg";
+						experiment.targetname = experiment.targetshape + experiment.targetcolor + "big.jpg";
 						$(targetobject).attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + "big.jpg");
 					} else if (stimslist[i] == "distractor1") {
 						var object = "#sobject" + (i+1);
@@ -360,7 +360,7 @@ var experiment = {
 						var targetobject = "#sobject" + experiment.targetpos;
 						experiment.objects[i][0] = "" + experiment.targetshape 
 						experiment.objects[i][1] = "" + experiment.targetcolor;
-						experiment.targetname = experiment.targetshape + experiment.targetcolor + ".jpg";
+						experiment.targetname = experiment.targetshape + experiment.targetcolor + "big.jpg";
 						$(targetobject).attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + "big.jpg");
 					} else if (stimslist[i] == "distractor1") {
 						var object = "#sobject" + (i+1);
@@ -606,7 +606,7 @@ var experiment = {
 	start: function() {
 
 		// put column headers in data file
-		var coltitles = "subid, condition, counter, trialtype, chosetarget, choselure, attncheckscore, targetname, chosenname, colorasked, targetsize, searchtype, choseunique, targetshape, targetcolor, targetword, distractorshape1, distractorcolor1, date, timestamp, rtsearch, targetpos, lurepos, obj1shape,obj1color,obj2shape,obj2color,obj3shape,obj3color \n";
+		var coltitles = "subid, condition, counter, trialtype, chosetarget, choselure, attncheckscore, targetname, chosenname, adj, targetsize, searchtype, choseunique, targetshape, targetcolor, targetword, distractorshape1, distractorcolor1, date, timestamp, rtsearch, targetpos, lurepos, obj1shape,obj1color,obj2shape,obj2color,obj3shape,obj3color \n";
 		experiment.data.push(coltitles)
 
 		

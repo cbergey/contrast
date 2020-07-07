@@ -61,11 +61,9 @@ function createArray(length) {
 // STIMULI AND TRIAL TYPES
 
 
-// ADD SHAPE 1 BACK FOR FINAL VERSION
-
 var shapes = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"];
 
-var words = ["dax", "blicket", "wug", "toma", "gade", "sprock","koba","zorp", "flib", "boti", "quen", "lomet"];
+var words = ["blicket", "wug", "toma", "gade", "sprock", "koba", "zorp", "lomet"];
 
 var colors = ["red", "blue", "green", "purple"];
 
@@ -73,7 +71,7 @@ var checkwords = ["wug", "gade", "toma", "blicket"]
 
 var foilwords = ["almo", "warb", "fugle", "larby"]
 
-var trialtypes = [1,1,2,2,3,3,4,4];
+var trialtypes = [1,2,3,4,5,6,7,8];
 
 var sizes = ["big","small"];
 
@@ -278,10 +276,24 @@ var experiment = {
 		experiment.trialtype = experiment.trialtypes[experiment.counter - 1];
 
 
-		if (experiment.trialtype == 1 || experiment.trialtype == 2) {
+		if (experiment.trialtype <= 4) {
 			experiment.searchtype = "contrast";
-		} else if (experiment.trialtype == 3 || experiment.trialtype == 4) {
+			if (experiment.trialtype <= 2) {
+				experiment.targetsize = "big"
+				experiment.distractorsize = "small"
+			} else {
+				experiment.targetsize = "small"
+				experiment.distractorsize = "big"
+			}
+		} else if (experiment.trialtype > 4) {
 			experiment.searchtype = "uniquetarget";
+			if (experiment.trialtype <= 6) {
+				experiment.targetsize = "big"
+				experiment.distractorsize = "small"
+			} else {
+				experiment.targetsize = "small"
+				experiment.distractorsize = "big"
+			}
 		} 
 
 		if (experiment.trialtype%2 == 0) {
@@ -295,19 +307,12 @@ var experiment = {
 
 			trialcolors = experiment.colors.slice();
 
-			trialsizes = sizes.slice();
-
 			trialcolors = shuffle(trialcolors);
-
-			trialsizes = shuffle(trialsizes);
 
 			experiment.targetword = experiment.words.pop();
 
 			experiment.targetshape = experiment.shapes.pop();
 			experiment.targetcolor = trialcolors.pop();
-
-			experiment.targetsize = trialsizes.pop();
-			experiment.distractorsize = trialsizes.pop();
 
 			experiment.numclicks = 0;
 
@@ -351,7 +356,7 @@ var experiment = {
 						var targetobject = "#sobject" + experiment.targetpos;
 						experiment.objects[i][0] = "" + experiment.targetshape 
 						experiment.objects[i][1] = "" + experiment.targetsize;
-						experiment.targetname = experiment.targetshape + experiment.targetcolor + ".jpg";
+						experiment.targetname = experiment.targetshape + experiment.targetcolor + experiment.targetsize + ".jpg";
 						$(targetobject).attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + experiment.targetsize + ".jpg");
 					} else if (stimslist[i] == "distractor1") {
 						var object = "#sobject" + (i+1);
@@ -596,7 +601,7 @@ var experiment = {
 	start: function() {
 
 		// put column headers in data file
-		var coltitles = "subid, condition, counter, trialtype, chosetarget, choselure, attncheckscore, targetname, chosenname, sizeasked, targetsize, searchtype, choseunique, targetshape, targetcolor, targetword, distractorshape1, distractorcolor1, date, timestamp, rtsearch, targetpos, lurepos, obj1shape,obj1size,obj2shape,obj2size,obj3shape,obj3size \n";
+		var coltitles = "subid, condition, counter, trialtype, chosetarget, choselure, attncheckscore, targetname, chosenname, adj, targetsize, searchtype, choseunique, targetshape, targetcolor, targetword, distractorshape1, distractorcolor1, date, timestamp, rtsearch, targetpos, lurepos, obj1shape,obj1size,obj2shape,obj2size,obj3shape,obj3size \n";
 		experiment.data.push(coltitles)
 		
 		experiment.next("search");
