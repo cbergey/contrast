@@ -62,7 +62,7 @@ var sizes = ["big","small"];
 
 var words = [["dax","daxes"], ["blicket","blickets"], ["wug","wugs"], ["toma", "tomas"], ["gade", "gades"], ["sprock", "sprocks"]];
 
-var trialtypes = [1,2,3,4,5,6];
+var trialtypes = [3,4,5,6];
 
 var checkwords = ["wug", "gade", "toma", "blicket"]
 
@@ -93,7 +93,7 @@ var experiment = {
 
 	observationtype: "",
 
-	colorasked: "",
+	utttype: "",
 
 	searchtype: "",
 
@@ -177,7 +177,7 @@ var experiment = {
 	processOneRow: function() {
 		var dataforRound = experiment.subid; 
 		dataforRound += "," + experiment.counter + "," + experiment.trialtype + "," + experiment.percentage;
-		dataforRound += "," + experiment.colorasked;
+		dataforRound += "," + experiment.utttype;
 		dataforRound += "," + experiment.searchtype + "," + experiment.targetshape + "," + experiment.targetcolor + "," + experiment.targetword[0];
 		dataforRound += "," + experiment.distractorshape1 + "," + experiment.distractorshape2 + "," + experiment.distractorcolor;
 		dataforRound += "," + experiment.date + "," + experiment.timestamp + "," + experiment.rtsearch + "," + experiment.rttest + "," + experiment.targetpos + "," + experiment.foilpos + "," + experiment.attncheckscore + "\n";
@@ -210,18 +210,18 @@ var experiment = {
 
 		experiment.trialtype = experiment.trialtypes[experiment.counter - 1];
 
-		if (experiment.trialtype == 1 || experiment.trialtype == 2) {
-			experiment.searchtype = "contrast";
-		} else if (experiment.trialtype == 3 || experiment.trialtype == 4) {
-			experiment.searchtype = "polychrome";
-		} else if (experiment.trialtype == 5 || experiment.trialtype == 6) {
-			experiment.searchtype = "monochrome";
-		}
-
 		if (experiment.trialtype%2 == 0) {
-			experiment.colorasked = true;
+			experiment.searchtype = "contrast";
 		} else {
-			experiment.colorasked = false;
+			experiment.searchtype = "differentcolors";
+		} 
+
+		if (experiment.trialtype == 1 || experiment.trialtype == 2) {
+			experiment.utttype = "noutt";
+		} else if (experiment.trialtype == 3 || experiment.trialtype == 4) {
+			experiment.utttype = "adj";
+		} else if (experiment.trialtype == 5 || experiment.trialtype == 6) {
+			experiment.utttype = "noadj";
 		}
 
 
@@ -288,7 +288,7 @@ var experiment = {
 						$(object).attr("src", "stim-images/object" + experiment.distractorshape2 + experiment.targetcolor + ".jpg");
 					}
 				}
-  			} else if (experiment.searchtype == "polychrome") {
+  			} else if (experiment.searchtype == "differentcolors") {
 				for (i = 0; i < rightstims.length; i++) {
 					if (rightstims[i] == "target") {
 						var targetnum = 2+i+1;
@@ -308,33 +308,15 @@ var experiment = {
 						$(object).attr("src", "stim-images/object" + experiment.targetshape + experiment.distractorcolor + ".jpg");
 					}
 				}
-  			} else if (experiment.searchtype == "monochrome") {
-				for (i = 0; i < rightstims.length; i++) {
-					if (rightstims[i] == "target") {
-						var targetnum = 2+i+1;
-						var targetobject = "#sobject" + targetnum;
-						experiment.targetpos = 2+i+1;
-						$(targetobject).attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + ".jpg");
-					} else if (rightstims[i] == "distractor1") {
-						var object = "#sobject" + (2+i+1);
-						$(object).attr("src", "stim-images/object" + experiment.distractorshape2 + experiment.targetcolor + ".jpg");
-					}
-					if (leftstims[i] == "distractor2") {
-						var object = "#sobject" + (i+1);
-						$(object).attr("src", "stim-images/object" + experiment.distractorshape1 + experiment.distractorcolor + ".jpg");
-					} else if (leftstims[i] == "distractor3") {
-						var object = "#sobject" + (i+1);
-						experiment.foilpos = i+1;
-						$(object).attr("src", "stim-images/object" + experiment.targetshape + experiment.distractorcolor + ".jpg");
-					}
-				}
-  			}
+  			} 
 	
 
-			if (experiment.colorasked == true) {
-				$("#speech1").html("Hey, pass me the <b>" + experiment.targetcolor + " " +  experiment.targetword[0] + "</b>.");
-			} else {
+			if (experiment.utttype == "adj") {
+				$("#speech1").html("Hey, pass me the <b>" + experiment.targetsize + " " +  experiment.targetword[0] + "</b>.");
+			} else if (experiment.utttype == "noadj") {
 				$("#speech1").html("Hey, pass me the <b>" + experiment.targetword[0] + "</b>.");
+			} else if (experiment.utttype == "noutt") {
+				$("#speech1").html("Zem, noba bi yix <b>" + experiment.targetword[0] + "</b>.");
 			}
 			
 			
@@ -364,7 +346,11 @@ var experiment = {
 
 		    setTimeout(function() {
 					$("#bubble2").attr("src", "stim-images/speechbubble2.jpg");
-					$("#speech2").html("Here you go!");
+					if (experiment.utttype == "noutt") {
+						$("#speech2").html("Pila rem sa!");
+					} else {
+						$("#speech2").html("Here you go!");
+					}
 					$("#bubble2").fadeTo(0,1)
 					$("#speech2").fadeTo(0,1)
 					$("#bubble2").show()
@@ -412,7 +398,7 @@ var experiment = {
 			clickDisabled = true;
   	 		$( "#nexttrialbutton" ).attr('disabled', true);
 
-	    	$("#tinstructions").html("On this planet, what percentage of " + experiment.targetword[1] + " do you think are " + experiment.targetcolor + "? <br> Use the slider below to indicate a response.");
+	    	$("#tinstructions").html("On this planet, what percentage of " + experiment.targetword[1] + " do you think are the color shown below? <br> Use the slider below to indicate a response.");
 	    	$("#tinstructions").show();
 	    	
 	    	$("#slider").show();
@@ -520,7 +506,7 @@ var experiment = {
 	start: function() {
 
 		// put column headers in data file
-		experiment.data.push("subid, counter, trialtype, percentage, colorasked, searchtype, targetshape, targetcolor, targetword, distractorshape1, distractorshape2, distractorcolor, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
+		experiment.data.push("subid, counter, trialtype, percentage, utttype, searchtype, targetshape, targetcolor, targetword, distractorshape1, distractorshape2, distractorcolor, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
 
 		// randomize order of trial types
 		experiment.trialtypes = shuffle(trialtypes);
