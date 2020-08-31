@@ -104,10 +104,20 @@
   <div class="slide" id="testingstage">
       <center><div id="tinstructions"> </div></center>
       <div id="labelInst"> </div>
-      <center><div id="slider" class = "slidecontainer">
-        <div id="custom-handle" class="ui-slider-handle"></div>
-      </div></center>
-      <div id="sliderlabel"> </div>
+      <center><div class="row">
+      <div class="col-xs-3">
+      </div>
+      <div class="col-xs-2">
+      </div>
+      <div class="col-xs-2">
+        <img id="targetimg" class="img-responsive" style="padding:30">
+      </div>
+
+    </div></center>
+    <center><div id="slider" class = "slidecontainer">
+      <div id="custom-handle" class="ui-slider-handle"></div>
+    </div></center>
+    <div id="sliderlabel"> </div>
       <center><button type="button" id="nexttrialbutton">Next</button></center>
   </div>
 
@@ -187,7 +197,7 @@
 
   <div class="slide" id="secondInstructions">
     <p class="block-text"> In this task, you will see aliens talk about and exchange alien objects, and you will be asked questions about these objects. </p> 
-    <p class="block-text"> Please pay attention to the aliens' objects and behavior. Press the button below to start the experiment. </p> 
+    <p class="block-text"> Sometimes the aliens will be using completely alien language, and sometimes parts of it will be translated into English. Please pay attention to the aliens' objects and behavior. Press the button below to start the experiment. </p>  
     <center><input type="submit" value="Next" onClick="this.blur(); experiment.startExperiment()"></center>
   </div>
 

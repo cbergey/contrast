@@ -90,6 +90,8 @@ var experiment = {
 
 	observationtype: "",
 
+	chosetarget: false,
+
 	utttype: "",
 
 	searchtype: "",
@@ -137,6 +139,8 @@ var experiment = {
 
 	foilpos: 0,
 
+	condition: "size",
+
 	attncheckscore: 0,
 
 
@@ -165,28 +169,10 @@ var experiment = {
     		$("#stage").fadeOut();
     	}, 100);
 
-    	var thisword = ""
-		for (i = 0; i < checkwords.length; i++) {
-			thisword = "#" + checkwords[i]
-			if ($(thisword).is(":checked")) {
-				experiment.attncheckscore++;
-			}
-		}
-		for (i = 0; i < foilwords.length; i++) {
-			thisword = "#" + foilwords[i]
-			if (!$(thisword).is(":checked")) {
-				experiment.attncheckscore++;
-			}
-		}
-
+    	
 		setTimeout(function () {
     		$("#searchstage").fadeOut();
     	}, 100);
-
-
-		experiment.trialtype = 0
-		experiment.searchtype = "attncheck"
-		experiment.processOneRow();
     	
     	setTimeout(function() { turk.submit(experiment, true) }, 1500);
     	showSlide("finish");
@@ -197,10 +183,10 @@ var experiment = {
 
 	//concatenates all experimental variables into a string which represents one "row" of data in the eventual csv, to live in the server
 	processOneRow: function() {
-		var dataforRound = experiment.subid; 
+		var dataforRound = experiment.subid + "," + experiment.condition; 
 		dataforRound += "," + experiment.counter + "," + experiment.trialtype + "," + experiment.percentage;
 		dataforRound += "," + experiment.utttype;
-		dataforRound += "," + experiment.searchtype + "," + experiment.targetshape + "," + experiment.targetcolor + "," + experiment.targetsize + "," + experiment.targetword[0];
+		dataforRound += "," + experiment.searchtype + "," + experiment.targetshape + "," + experiment.targetcolor + "," + experiment.targetsize + "," + experiment.targetword[0] + "," + experiment.chosetarget;
 		dataforRound += "," + experiment.distractorshape1 + "," + experiment.distractorshape2 + "," + experiment.distractorsize;
 		dataforRound += "," + experiment.date + "," + experiment.timestamp + "," + experiment.rtsearch + "," + experiment.rttest + "," + experiment.targetpos + "," + experiment.foilpos + "," + experiment.attncheckscore + "\n";
 		experiment.data.push(dataforRound);	
@@ -235,7 +221,7 @@ var experiment = {
 		if (experiment.trialtype%2 == 0) {
 			experiment.searchtype = "contrast";
 		} else {
-			experiment.searchtype = "differentsizes";
+			experiment.searchtype = "differentshapes";
 		} 
 
 		if (experiment.trialtype == 1 || experiment.trialtype == 2) {
@@ -313,7 +299,7 @@ var experiment = {
 						$(object).attr("src", "stim-images/object" + experiment.distractorshape2 + experiment.targetcolor + experiment.targetsize + ".jpg");
 					}
 				}
-  			} else if (experiment.searchtype == "differentsizes") {
+  			} else if (experiment.searchtype == "differentshapes") {
 				for (i = 0; i < rightstims.length; i++) {
 					if (rightstims[i] == "target") {
 						var targetnum = 2+i+1;
@@ -460,8 +446,13 @@ var experiment = {
 			$("#attnCheck").fadeOut();
 			
 
-
+			experiment.percentage = 0
+			experiment.utttype = ""
 			experiment.trialtype = 0
+			experiment.targetcolor = ""
+			experiment.targetsize = ""
+			experiment.targetshape = 0
+			experiment.targetword = ""
 			experiment.searchtype = "attncheck"
 			experiment.processOneRow();
 			experiment.counter++;
@@ -533,15 +524,13 @@ var experiment = {
 	start: function() {
 
 		// put column headers in data file
-		experiment.data.push("subid, counter, trialtype, percentage, utttype, searchtype, targetshape, targetcolor, targetsize, targetword, distractorshape1, distractorshape2, distractorsize, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
+		experiment.data.push("subid, condition, counter, trialtype, percentage, utttype, searchtype, targetshape, targetcolor, targetsize, targetword, chosetarget, distractorshape1, distractorshape2, distractorsize, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
 
 		// randomize order of trial types
 		experiment.trialtypes = shuffle(trialtypes);
 		var firsttrials = [1,2]
 		firsttrials = shuffle(firsttrials)
-		console.log(firsttrials)
 		experiment.trialtypes.unshift(firsttrials[0],firsttrials[1])
-		console.log(experiment.trialtypes)
 		experiment.shapes = shuffle(shapes);
 		experiment.colors = shuffle(colors);
 		experiment.words = shuffle(words);

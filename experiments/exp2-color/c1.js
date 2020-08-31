@@ -6,7 +6,6 @@
 
 // ---------------- PARAMETERS ------------------
 
-// must be a multiple of 4 
 var numtrials = 6;
 
 // ---------------- HELPER ------------------
@@ -103,6 +102,10 @@ var experiment = {
 
 	targetword: "",
 
+	targetsize: "big",
+
+	chosetarget: false,
+
 	distractorshape1: "",
 
 	distractorshape2: "",
@@ -137,6 +140,8 @@ var experiment = {
 	targetpos: 0,
 
 	foilpos: 0,
+
+	condition: "color",
 
 	attncheckscore: 0,
 
@@ -175,10 +180,10 @@ var experiment = {
 
 	//concatenates all experimental variables into a string which represents one "row" of data in the eventual csv, to live in the server
 	processOneRow: function() {
-		var dataforRound = experiment.subid; 
+		var dataforRound = experiment.subid + "," + experiment.condition; 
 		dataforRound += "," + experiment.counter + "," + experiment.trialtype + "," + experiment.percentage;
 		dataforRound += "," + experiment.utttype;
-		dataforRound += "," + experiment.searchtype + "," + experiment.targetshape + "," + experiment.targetcolor + "," + experiment.targetword[0];
+		dataforRound += "," + experiment.searchtype + "," + experiment.targetshape + "," + experiment.targetcolor + "," + experiment.targetsize + "," + experiment.targetword[0] + "," + experiment.chosetarget;
 		dataforRound += "," + experiment.distractorshape1 + "," + experiment.distractorshape2 + "," + experiment.distractorcolor;
 		dataforRound += "," + experiment.date + "," + experiment.timestamp + "," + experiment.rtsearch + "," + experiment.rttest + "," + experiment.targetpos + "," + experiment.foilpos + "," + experiment.attncheckscore + "\n";
 		experiment.data.push(dataforRound);	
@@ -213,7 +218,7 @@ var experiment = {
 		if (experiment.trialtype%2 == 0) {
 			experiment.searchtype = "contrast";
 		} else {
-			experiment.searchtype = "differentcolors";
+			experiment.searchtype = "differentshapes";
 		} 
 
 		if (experiment.trialtype == 1 || experiment.trialtype == 2) {
@@ -288,7 +293,7 @@ var experiment = {
 						$(object).attr("src", "stim-images/object" + experiment.distractorshape2 + experiment.targetcolor + ".jpg");
 					}
 				}
-  			} else if (experiment.searchtype == "differentcolors") {
+  			} else if (experiment.searchtype == "differentshapes") {
 				for (i = 0; i < rightstims.length; i++) {
 					if (rightstims[i] == "target") {
 						var targetnum = 2+i+1;
@@ -312,7 +317,7 @@ var experiment = {
 	
 
 			if (experiment.utttype == "adj") {
-				$("#speech1").html("Hey, pass me the <b>" + experiment.targetsize + " " +  experiment.targetword[0] + "</b>.");
+				$("#speech1").html("Hey, pass me the <b>" + experiment.targetcolor + " " +  experiment.targetword[0] + "</b>.");
 			} else if (experiment.utttype == "noadj") {
 				$("#speech1").html("Hey, pass me the <b>" + experiment.targetword[0] + "</b>.");
 			} else if (experiment.utttype == "noutt") {
@@ -398,9 +403,10 @@ var experiment = {
 			clickDisabled = true;
   	 		$( "#nexttrialbutton" ).attr('disabled', true);
 
-	    	$("#tinstructions").html("On this planet, what percentage of " + experiment.targetword[1] + " do you think are the color shown below? <br> Use the slider below to indicate a response.");
+	    	$("#tinstructions").html("On this planet, what percentage of <b>" + experiment.targetword[1] + "</b> do you think are the color shown below? <br> Use the slider below to indicate a response.");
 	    	$("#tinstructions").show();
-	    	
+	    	$("#targetimg").attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + ".jpg");
+	    	$("#targetimg").show()
 	    	$("#slider").show();
 	    	$("#custom-handle").hide();
 
@@ -430,11 +436,15 @@ var experiment = {
 			}
 
 			
-			$("#attnCheck").fadeOut();
+			$("#attnCheck").fadeOut()
 			
-
-
+			experiment.percentage = 0
+			experiment.utttype = ""
 			experiment.trialtype = 0
+			experiment.targetcolor = ""
+			experiment.targetsize = ""
+			experiment.targetshape = 0
+			experiment.targetword = ""
 			experiment.searchtype = "attncheck"
 			experiment.processOneRow();
 			experiment.counter++;
@@ -506,10 +516,13 @@ var experiment = {
 	start: function() {
 
 		// put column headers in data file
-		experiment.data.push("subid, counter, trialtype, percentage, utttype, searchtype, targetshape, targetcolor, targetword, distractorshape1, distractorshape2, distractorcolor, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
+		experiment.data.push("subid, condition, counter, trialtype, percentage, utttype, searchtype, targetshape, targetcolor, targetsize, targetword, chosetarget, distractorshape1, distractorshape2, distractorcolor, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
 
 		// randomize order of trial types
 		experiment.trialtypes = shuffle(trialtypes);
+		var firsttrials = [1,2]
+		firsttrials = shuffle(firsttrials)
+		experiment.trialtypes.unshift(firsttrials[0],firsttrials[1])
 		experiment.shapes = shuffle(shapes);
 		experiment.colors = shuffle(colors);
 		experiment.words = shuffle(words);
