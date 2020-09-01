@@ -1,0 +1,71 @@
+---
+title: "exp2_analysis"
+output: html_document
+---
+
+```{r libraries}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+               error = FALSE, cache = TRUE, tidy = FALSE)
+
+library(tidyverse)
+library(jsonlite)
+library(here)
+library(tidyboot)
+library(anonymizer)
+library(lme4)
+library(broom.mixed)
+
+theme_set(theme_classic(base_size = 18))
+```
+
+```{r data}
+data <- read_csv(here("data/exp2_turk_data.csv"))
+
+keep_subjs <- data %>%
+  filter(searchtype == "colorcheck", chosetarget == TRUE, attncheckscore >= 6) %>%
+  group_by(subid) %>%
+  count() %>%
+  filter(n == 4)
+
+subj_data <- data %>%
+  filter(subid %in% keep_subjs$subid) %>%
+  filter(trialtype != 0) 
+
+mean_data <- subj_data %>%
+  group_by(searchtype, utttype, condition) %>%
+  tidyboot_mean(percentage)
+```
+
+```{r plots}
+ggplot(mean_data, aes(x = utttype, color = searchtype)) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
+                  position = position_dodge(.5)) + 
+  facet_wrap(~condition)
+```
+
+```{r models}
+# all prereg'd models below
+
+utt_model_no_alien <- subj_data %>%
+  filter(utttype != "noutt") %>%
+  lmer(percentage ~ utttype + (utttype|subid), data = .) %>%
+  tidy(effects = "fixed")
+
+utt_model_no_alien
+
+utt_model <- subj_data %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  lmer(percentage ~ utttype + (utttype|subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed")
+
+utt_model
+
+# model did not converge with maximal slopes
+full_model <- subj_data %>%
+  lmer(percentage ~ utttype*searchtype*condition + (utttype|subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed")
+
+full_model
+```
