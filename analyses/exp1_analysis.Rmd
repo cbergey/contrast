@@ -14,7 +14,8 @@ library(tidyboot)
 library(anonymizer)
 library(lme4)
 library(broom)
-
+library(ggthemes)
+library(RColorBrewer)
 theme_set(theme_classic(base_size = 18))
 ```
 
@@ -51,15 +52,25 @@ ggplot(mean_data %>% filter(searchtype == "uniquetarget", item == "target"),
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
                   position = position_dodge(.5)) + 
   ylab("Item chosen") + 
-  xlab("")
+  xlab("") +
+  theme(rect = element_rect(fill = "transparent"))
 
-ggplot(mean_data %>% filter(searchtype == "contrast", item != "unique"), 
+
+p1 <- ggplot(mean_data %>% filter(searchtype == "contrast", item != "unique"), 
        aes(x = adjective_used, color = item)) +
-  facet_wrap(~ condition) +
-  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
+    facet_wrap(~ condition) +
+    geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
                   position = position_dodge(.5)) + 
-  ylab("Item chosen") + 
-  xlab("")
+    ylab("Item chosen") + 
+    xlab("")+
+    theme(rect = element_rect(fill = "transparent"),
+          panel.background = element_rect(fill = "transparent",colour = NA))  +
+    scale_colour_manual(values=c("#ff8e2a", "#5c8b14", "#66CC99"))
+
+
+p1
+
+ggsave(p1, filename = "exp1_p1.png",  bg = "transparent")
 ```
 
 ```{r models}

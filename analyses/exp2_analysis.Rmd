@@ -37,10 +37,21 @@ mean_data <- subj_data %>%
 ```
 
 ```{r plots}
-ggplot(mean_data, aes(x = utttype, color = searchtype)) +
+p1 <- mean_data %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  filter(utttype != "noutt") %>%
+  ggplot(aes(x = utttype, color = condition)) +
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
                   position = position_dodge(.5)) + 
-  facet_wrap(~condition)
+  facet_wrap(~searchtype) +
+    theme(rect = element_rect(fill = "transparent"),
+          panel.background = element_rect(fill = "transparent",colour = NA))  +
+    scale_colour_manual(values=c("#ff8e2a", "#5c8b14", "#66CC99"))
+
+
+p1
+
+ggsave(p1, filename = "exp2_p1.png",  bg = "transparent")
 ```
 
 ```{r models}
