@@ -1,9 +1,6 @@
 ---
-title: "Using contrastive inferences to learn about new words and categories"
-bibliography: library.bib
-csl: apa6.csl
-
-document-params: "12pt, letterpaper"
+title             : "Using contrastive inferences to learn about new words and categories"
+shorttitle        : "Parents fine-tune speech"
 
 author: 
   - name          : "Claire Bergey"
@@ -22,19 +19,38 @@ affiliation:
 
  
 
-abstract: 
+abstract: |
+  In the face of unfamiliar language or objects, description is one cue people can use to learn about both. Beyond narrowing potential referents to those that match a descriptor, listeners could infer that a described object is one that contrasts with other relevant objects of the same type (e.g., ``The tall cup'' contrasts with another, shorter cup). This contrast may be in relation to other present objects in the environment or to the referent’s category. In three experiments, we investigate whether listeners use descriptive contrast to resolve reference and make inferences about novel referents' categories. People use size adjectives contrastively to guide referent choice, they do not do so using color adjectives (Experiment 1). People also use description to infer that a novel object is atypical of its category (Experiment 2). Finally, Overall, people are able to use descriptive contrast to resolve reference and make inferences about a novel object’s category, but limits to these abilities present further questions about the effect of context on listener interpretation."
 
-  "In the face of unfamiliar language or objects, description is one cue people can use to learn about both. Beyond narrowing potential referents to those that match a descriptor, listeners could infer that a described object is one that contrasts with other relevant objects of the same type (e.g., ``The tall cup'' contrasts with another, shorter cup). This contrast may be in relation to other present objects in the environment or to the referent’s category. In three experiments, we investigate whether listeners use descriptive contrast to resolve reference and make inferences about novel referents' categories. People use size adjectives contrastively to guide referent choice, they do not do so using color adjectives (Experiment 1). People also use description to infer that a novel object is atypical of its category (Experiment 2). Finally, Overall, people are able to use descriptive contrast to resolve reference and make inferences about a novel object’s category, but limits to these abilities present further questions about the effect of context on listener interpretation."
+authornote: |
+  All data and code for these analyses are available at https://osf.io/3f8hy/?view_only=9a196db0444c4867bc899cc70a7a1e9c.
 
-    
-output: papaja::apa6_pdf
+
+keywords          : "parent-child interaction; language development; communication"
+wordcount         : "1385"
+references        : "42"
+
+bibliography      : ["contrast.bib"]
+
+floatsintext      : yes
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+linenumbers       : yes
+mask              : no
+draft             : no
+documentclass     : "apa6"
+classoption       : "man"    
+output            : papaja::apa6_pdf
 ---
 
 ```{r global_options, include=FALSE}
-rm(list=ls())
-knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, fig.pos = "tb",
-                      fig.path='figs/', echo=F, warning=F, cache=F, message=F,
-                      sanitize = T)
+knitr::opts_chunk$set(fig.pos = '!tb', echo = FALSE, cache = TRUE, 
+                      warning = FALSE, message = FALSE, 
+                      sanitize = TRUE, fig.path='figs/', fig.width = 3,
+                      fig.height = 3, fig.pos = "t!")
+set.seed(42)
+options(digits=3, dplyr.summarise.inform = FALSE)
 ```
 
 ```{r, libraries}
@@ -54,15 +70,29 @@ library(gridExtra)
 library(directlabels)
 library(tidyboot)
 library(lmerTest)
-library(jsonlite)
-library(anonymizer)
 library(knitr)
 
-theme_set(theme_classic(base_size = 10))
+theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 logit <- function(x) {log(x/(1-x))}
 
-options(digits=2)
 ```
+
+```{r make-text-vars}
+make_text_vars <- function(df, term_name, term_filter = NULL) {
+  if(!is.null(term_filter)) {
+    filtered_df <- df %>%
+      filter(term == term_filter) 
+  } else{
+    filtered_df <- df
+  }
+    
+  walk(c("estimate", "statistic", "p.value", "d", "d_low", "d_high"), 
+      ~assign(glue("{term_name}_{.x}"), 
+              filtered_df %>% pull(!!.x), 
+         envir = globalenv()))
+}
+```
+
 
 # Introduction
 
@@ -161,11 +191,9 @@ e1_mean_data %>%
   theme(legend.position = "none")
 ```
 
-
 ### Design and Procedure.
 
 Participants were told they would play a game in which they would search for strange alien fruits. Each participant saw eight trials. Half of the trials were unique target displays and half were contrastive displays. Crossed with display type, half of trials had audio instructions that described the critical feature of the target (“Find the [blue/big] dax”), and half of trials had audio instructions with no adjective description (“Find the dax”). A name was randomly chosen at each trial from a list of eight nonce names: blicket, wug, toma, gade, sprock, koba, zorp, and lomet. 
-
 
 ## Results
 
@@ -261,7 +289,7 @@ contrast_comparison_noadj <- e1_data %>%
 
 ```
 
-Our key test was whether participants would choose the target object on contrastive trials in which description was given, reflecting use of a contrastive inference to choose a novel referent. To do this, we compare participants' rate of choosing the target to their rate of choosing the lure, which shares the relevant contrast feature with the target, when the audio described the contrast feature. Participants chose the target more than the lure in the size condition ($\beta =$ `r contrast_comparison %>% filter(condition == "size") %>% pull(estimate)`, $t =$ `r contrast_comparison %>% filter(condition == "size") %>% pull(statistic)`, $p =$ `r contrast_comparison %>% filter(condition == "size") %>% pull(p.value) %>% printp()`). However, participants in the color condition did not choose the target significantly more often than they chose the lure ($\beta =$ `r contrast_comparison %>% filter(condition == "color") %>% pull(estimate)`, $t =$ `r contrast_comparison %>% filter(condition == "color") %>% pull(statistic)`, $p =$ `r contrast_comparison %>% filter(condition == "color") %>% pull(p.value) %>% printp()`). On contrastive trials in which a descriptor was not given, participants dispreferred the target, instead choosing the lure object, which matched the target on the descriptor but had a unique shape; this was true across color ($\beta =$ `r contrast_comparison_noadj %>% filter(condition == "color") %>% pull(estimate)`, $t =$ `r contrast_comparison_noadj %>% filter(condition == "color") %>% pull(statistic)`, $p =$ `r contrast_comparison_noadj %>% filter(condition == "color") %>% pull(p.value) %>% printp()`) and size ($\beta =$ `r contrast_comparison_noadj %>% filter(condition == "size") %>% pull(estimate)`, $t =$ `r contrast_comparison_noadj %>% filter(condition == "size") %>% pull(statistic)`, $p =$ `r contrast_comparison_noadj %>% filter(condition == "size") %>% pull(p.value) %>% printp()`) conditions. Adjective use therefore increased target choice ($\beta =$ `r glmer_unique_contrast %>% filter(term == "adjective_usedTRUE") %>% pull(estimate)`, $t =$ `r glmer_unique_contrast %>% filter(term == "adjective_usedTRUE") %>% pull(statistic)`, $p$ `r glmer_unique_contrast %>% filter(term == "adjective_usedTRUE") %>% pull(p.value) %>% printp()`) across contrastive trials. Participants' choice of the target in the size condition was therefore not due to a prior preference for the target in contrastive displays, but relied on contrastive interpretation of the adjective.
+<!-- Our key test was whether participants would choose the target object on contrastive trials in which description was given, reflecting use of a contrastive inference to choose a novel referent. To do this, we compare participants' rate of choosing the target to their rate of choosing the lure, which shares the relevant contrast feature with the target, when the audio described the contrast feature. Participants chose the target more than the lure in the size condition ($\beta =$ `r contrast_comparison %>% filter(condition == "size") %>% pull(estimate)`, $t =$ `r contrast_comparison %>% filter(condition == "size") %>% pull(statistic)`, $p =$ `r contrast_comparison %>% filter(condition == "size") %>% pull(p.value) %>% printp()`). However, participants in the color condition did not choose the target significantly more often than they chose the lure ($\beta =$ `r contrast_comparison %>% filter(condition == "color") %>% pull(estimate)`, $t =$ `r contrast_comparison %>% filter(condition == "color") %>% pull(statistic)`, $p =$ `r contrast_comparison %>% filter(condition == "color") %>% pull(p.value) %>% printp()`). On contrastive trials in which a descriptor was not given, participants dispreferred the target, instead choosing the lure object, which matched the target on the descriptor but had a unique shape; this was true across color ($\beta =$ `r contrast_comparison_noadj %>% filter(condition == "color") %>% pull(estimate)`, $t =$ `r contrast_comparison_noadj %>% filter(condition == "color") %>% pull(statistic)`, $p =$ `r contrast_comparison_noadj %>% filter(condition == "color") %>% pull(p.value) %>% printp()`) and size ($\beta =$ `r contrast_comparison_noadj %>% filter(condition == "size") %>% pull(estimate)`, $t =$ `r contrast_comparison_noadj %>% filter(condition == "size") %>% pull(statistic)`, $p =$ `r contrast_comparison_noadj %>% filter(condition == "size") %>% pull(p.value) %>% printp()`) conditions. Adjective use therefore increased target choice ($\beta =$ `r glmer_unique_contrast %>% filter(term == "adjective_usedTRUE") %>% pull(estimate)`, $t =$ `r glmer_unique_contrast %>% filter(term == "adjective_usedTRUE") %>% pull(statistic)`, $p$ `r glmer_unique_contrast %>% filter(term == "adjective_usedTRUE") %>% pull(p.value) %>% printp()`) across contrastive trials. Participants' choice of the target in the size condition was therefore not due to a prior preference for the target in contrastive displays, but relied on contrastive interpretation of the adjective. -->
 
 ```{r e2_read_data}
 e2_data <- read_csv(here("data/exp2_turk_data.csv"))
@@ -300,9 +328,11 @@ If listeners do use this type of contrast, it may not be as simple as judging th
 ## Method
 
 ### Participants.
+
 Four hundred participants were recruited from Amazon Mechanical Turk. Two hundred were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and 200 participants were assigned to a condition in which the critical feature was size (small or big).
 
 ### Stimuli & Procedure.
+
 Stimulus displays showed two alien interlocutors, one on the left (Alien A) and one on the right (Alien B) side of the screen, each with two novel fruit objects beneath them. Alien A, in a speech bubble, asked Alien B for one of its fruits (e.g., "Hey, pass me the red gade.") Alien B replied, "Here you go!" and the referent disappeared from Alien B's side and reappeared on Alien A's side. 
 
 Two factors, presence of the critical adjective in the referring expression and object context, were fully crossed within subjects. Object context had two levels: within-category contrast and between-category contrast. In the within-category contrast condition (hereafter abbreviated as "contrast"), Alien B possessed the target object and another object of the same shape, but with a different value of the critical feature (color or size). In the between-category contrast condition (abbreviated as "different"), Alien B possessed the target object and another object of a different shape, and with a different value of the critical feature. Thus, in the within-category contrast condition, the descriptor is necessary to distinguish the referent; in the between-category contrast condition it is unnecessary but potentially helpful. We manipulated the critical feature type (color or size) between subjects.
@@ -385,10 +415,26 @@ We first analyzed participants' judgments of the prevalence of the target object
 
 Thus, participants treated all adjectives as marked, and inferred lower typicality, regardless of whether they could felicitiously be interpreted as contrasting between potential target referents. But were participants nonetheless sensitive to this information in their response times? We investigated this question by analyzing participants' time to advance after seeing the aliens' referential exchange. Though this task was not speeded, we hypothesized that participants would advance more quickly after seeing referential exchanges that were easier to process. After dropping all response times less than 1 second and longer than 10 seconds, and log transforming them because of the right skew in response time data, we predicted participants' time to advance on each trial of the experiment from utterance type, context type, critical adjective type, and the interaction between utterance type and context type (\texttt{log(rt) $\sim$ adjective * search + type + (1 |subj)}). This model showed a reliable effect of utterance type ($\beta_{adjective} =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun") %>% pull(estimate)`, $t =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun") %>% pull(statistic)`, $p$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun") %>% pull(p.value) %>% printp()`)--participants were faster when an a descriptor was provided despite having to process an additional word. There was no main effect of critical adjective type ($\beta_{size} =$ `r tidy_rtmodel %>% filter(term == "conditionsize") %>% pull(estimate)`, $t =$ `r tidy_rtmodel %>% filter(term == "conditionsize") %>% pull(statistic)`, $p =$ `r tidy_rtmodel %>% filter(term == "conditionsize") %>% pull(p.value) %>% printp()`), nor context type ($\beta_{different} =$ `r tidy_rtmodel %>% filter(term == "searchtypedifferent") %>% pull(estimate)`, $t =$ `r tidy_rtmodel %>% filter(term == "searchtypedifferent") %>% pull(statistic)`, $p =$ `r tidy_rtmodel %>% filter(term == "searchtypedifferent") %>% pull(p.value) %>% printp()`; $\beta_{same} =$ `r tidy_rtmodel %>% filter(term == "searchtypesame") %>% pull(estimate)`, $t =$ `r tidy_rtmodel %>% filter(term == "searchtypesame") %>% pull(statistic)`, $p =$ `r tidy_rtmodel %>% filter(term == "searchtypesame") %>% pull(p.value) %>% printp()`), but the interactions between utterance type and context type trended towards significance for both non-contrast searches ($\beta_{adjective*different} =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun:searchtypedifferent") %>% pull(estimate)`, $t =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun:searchtypedifferent") %>% pull(statistic)`, $p =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun:searchtypedifferent") %>% pull(p.value) %>% printp()`; $\beta_{adjecgive*same} =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun:searchtypesame") %>% pull(estimate)`, $t =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun:searchtypesame") %>% pull(statistic)`, $p =$ `r tidy_rtmodel %>% filter(term == "adjectiveadjective noun:searchtypesame") %>% pull(p.value) %>% printp()`). Directionally, these results indicate that participants took longer to process utterances which were under-described (contrast trials with no adjective) than those with appropriately no description, and processed trials with an appropriate level of description (contrast trials with an adjective) more quickly than those with superfluous description.
 
+# Model
+
+To formalize the inference that participants were asked to make, we developed a model in the Rational Speech Act Framework  [RSA, @frank2012]. In this framework, pragmatic listeners ($L$) are modeled as drawing inferences about speakers' ($S$) communicative intentions in talking to a hypothetical literal listener ($L_{0}$. This literal listener makes no pragmatic inferences at all, evaluating the literal truth conditions of statements, and chooses randomly among all referents consistent with a statement (e.g. it is true that a red toma can be called "toma" and "red toma" but not "blue toma"). In planning their referential expressions, speakers choose utterances that are successful at accomplishing two goals: (1) Making the listener as likely as possible to select the correct object, and (2) minimizing their communicative cost (i.e. producing as few words as possible). Pragmatic listeners use Bayes' rule to invert the speaker's utility function, essentially inferring what the speaker's intention was likely to be given the utterance they produced. 
+
+$$Lit = $$
+$$Speaker = $$
+
+$$L = $$
+This computation naturally predicts a number of phenomena in pragmatics. For example, RSA explains scalar implicature--listeners treat "I ate some of the cookies" as a poor description of a case where the speaker at all of the cookies. The speaker's statement is literally true--the speaker eating some of the cookies is consistent with a world in which they ate all of then. However, this statement is ambiguous--it is true of both the world in which some cookies remain and the world in which there are no cookies left. Thus, if the speaker intends to convey that they ate all of the cookies, saying "I ate some of the cookies" will cause the literal listener to guess the wrong world half of the time. In contrast, the statement "I ate all of the cookies" is consistent only with world in which all of the cookies were eaten. Thus, if the speaker ate all of the cookies, this statement would accomplish their goal of communicating the state of the world more effectively. Scalar implicature arises from exact this inference: If the speaker actually ate all of the cookies, they should have said "I ate all of the cookies" because that would be a better utterance than "I ate some of the cookies." Since they produced "some," it is more likely that they wanted to communicate about the other possible world [@frank2012]. 
+
+Extensions of this framework have successfully accounted for a variety of other pragmatic inferences, including  inference that speech is hyperbolic (e.g. waiting "a million years" means waiting a long time), inferring when speakers are being polite rather than truthful, and learning new words in ambiguous contexts [@goodman2014; @kao2014; @yoon2016; @frank2014]. Further, a recent extension of the framework using continuous rather than discrete semantics has given an account of the kinds of differences between color and size modification that we observed in our experimental data [@degen2020]. 
+
+To allow the Rational Speech Act Framework to capture inferences about typicality, we modified the Speaker's utility function to have an additional term: The cost of referring to atypical object with a bare noun. This cost could arise from two possible sources. One possibility is that speakers are motivated to help listeners to select the correct referent not just eventually but as quickly as possible. In this case, they should prefer not to produce bare nouns (e.g. "bird") to refer to atypical examples of that category (e.g. "penguin"). This is roughly the kind of inference encoded in @degen2020's continuous semantics Rational Speech Act model. Alternatively, the cost may arise from difficulty of lexical access: In order to refer to an object, speakers need to retrieve the linguistic label appropriate. The difficulty of retrieving a lexical label may be proportional to how difficult it is [CITE?]. We are agnostic about whether this cost comes from speaker or listener design, and it makes no difference for the model's predictions.
+BETA DISTRIBUTION SIZE PRINCIPLE [@xu2007].
+
+Listeners draw inferences about speakers as in regular RSA, but now need to figure out whether an adjective was caused by this retrieval term, or reference, or both. 
 
 # Discussion
 
-In this series of experiments, we asked whether listeners could use pragmatic contrast to resolve referential ambiguity and make inferences about a referent's category. In our first experiment, participants were able to use size adjectives contrastively to establish a novel word–referent mapping. Their contrastive inference goes beyond the implicit attention allocation shown in prior eye-tracking paradigms [@sedivy_achieving_1999;@huangsnedeker2008], determining explicit referent choice. This finding bolsters contrastive inference as a viable tool for referential disambiguation. In our second experiment, participants interpreted size and color adjectives contrastively to make inferences about a novel referent's category.
+In this series of experiments, we asked whether listeners could use pragmatic contrast to resolve referential ambiguity and make inferences about a referent's category. In our first experiment, participants were able to use size adjectives contrastively to establish a novel word–referent mapping. Their contrastive inference goes beyond the implicit attention allocation shown in prior eye-tracking paradigms [@sedivy_achieving_1999; @huangsnedeker2008], determining explicit referent choice. This finding bolsters contrastive inference as a viable tool for referential disambiguation. In our second experiment, participants interpreted size and color adjectives contrastively to make inferences about a novel referent's category.
 
 Participants failed, however, to use color adjectives contrastively in choosing referents. What makes size different from color? One possibility is that the scalar nature of size supports a contrastive interpretation. We tested whether using relative color adjectives (e.g., bluer, greyer) or adjectives describing value (bright, dark) on saturated and desaturated stimuli would encourage the contrastive inference. We also tested whether adding a prosodic cue to contrast (e.g., “Find the *blue* dax”) would encourage contrastive inference. Participants persisted in interpreting color non-contrastively, never consistently choosing the intended target over the lure. Though we do not claim that contrastive color inferences cannot be used to explicitly choose referents, it seems that a contrastive interpretation is difficult to elicit using color, while it emerges under similar conditions using size.
 
@@ -402,5 +448,17 @@ Though the participants in our experiments were adults, the ability to disambigu
 
 Taken together, these experiments show that people use contrastive inference to map novel words to novel referents and to make inferences about the typicality of novel referents' features. Hearing "small toma" allows people to narrow possible referents not only to small objects, but objects with larger counterparts nearby. Hearing "big toma" in a referential context leads them to think that most tomas are not that size. However, these two abilities do not appear to interact. A referential felicitous use of description does not block an inference of atypicality. These results do not yet provide an explanation of *why* these skills do not interact: the inference may be too complex, the stimuli too novel, or listeners may use contrast more heuristically than rational models of pragmatic inference assume [@frank2012]. Understanding the origins of these independent but non-interpendent inferential abilities, as well as asymmetries between comprehension and production and adjectives like color and size, will be an important next challenge in our development of theories of human pragmatic inference.
 
+# Acknowledgements
+
+This research was funded by a James S. McDonnell Foundation Scholar Award to the last author.
+
+\newpage
 
 # References
+
+\begingroup
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
+
+<div id = "refs"></div>
+\endgroup
