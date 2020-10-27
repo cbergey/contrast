@@ -1,0 +1,79 @@
+var objects1 = [{color: "blue", shape: "toma", string: "blue toma"},
+               {color: "blue", shape: "dax", string: "blue dax"},
+               {color: "red", shape: "toma", string: "red toma"}]
+
+var objects2 = [{color: "blue", shape: "dax", string: "blue dax"},
+               {color: "blue", shape: "toma", string: "blue toma"},
+               {color: "red", shape: "dax", string: "red dax"}]
+
+
+// set of utterances
+var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma"]
+var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
+
+var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
+              {objects: objects2, utterances: utterances2, string: "two dax"}]
+
+
+// prior over world states
+var worldsPrior = function() {
+  var world = uniformDraw(worlds)
+  return world
+}
+
+// prior over object states
+var objectPrior = function(objects) {
+  var obj = uniformDraw(objects)
+  return obj.string
+}
+
+// meaning function to interpret the utterances
+var meaning = function(utterance, obj){
+  _.includes(obj, utterance)
+}
+
+// literal listener
+var literalListener = function(world, utterance){
+  Infer({model: function(){
+    var obj = objectPrior(world.objects);
+    condition(meaning(utterance, obj))
+    return obj
+  }})
+}
+
+// utterance prior
+var utterancePrior = function(utterances) {
+  var utterance = uniformDraw(utterances)
+  return utterance
+}
+
+//cost is number of words
+var cost = function(utterance) {
+ return Math.log(utterance.split(" ").length + 1)
+ //return 0
+}
+
+// pragmatic speaker
+var speaker = function(world, obj){
+  Infer({model: function(){
+    var utterance = uniformDraw(world.utterances)
+    factor(alpha * (literalListener(world, utterance).score(obj) - cost(utterance)))
+    return utterance
+  }})
+}
+
+// pragmatic listener
+var pragmaticListener = function(utterance){
+  Infer({model: function(){
+    var world = worldsPrior()
+    var obj = objectPrior(world.objects)
+    observe(speaker(world, obj),utterance)
+    var world_string = world.string
+    return{obj, world_string}
+  }})
+}
+
+
+// define actor optimality
+var alpha = 3
+pragmaticListener(_.first(data))

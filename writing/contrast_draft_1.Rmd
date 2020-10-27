@@ -48,12 +48,12 @@ output            : papaja::apa6_pdf
 knitr::opts_chunk$set(fig.pos = '!tb', echo = FALSE, cache = TRUE, 
                       warning = FALSE, message = FALSE, 
                       sanitize = TRUE, fig.path='figs/', fig.width = 3,
-                      fig.height = 3, fig.pos = "t!")
+                      fig.height = 3)
 set.seed(42)
 options(digits=3, dplyr.summarise.inform = FALSE)
 ```
 
-```{r, libraries}
+```{r libraries}
 library(png)
 library(grid)
 library(ggplot2)
@@ -72,6 +72,7 @@ library(directlabels)
 library(tidyboot)
 library(lmerTest)
 library(knitr)
+library(rwebppl)
 
 theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 logit <- function(x) {log(x/(1-x))}
@@ -170,12 +171,11 @@ e1_mean_data <- e1_data %>%
 300 participants were recruited from Amazon Mechanical Turk.  participants were assigned to a condition in which the critical feature was color (stimuli contrasted on color), and  participants were assigned to a condition in which the critical feature was size.
 
 
-
 ### Stimuli.
 
 Stimulus displays were arrays of three novel fruit objects. Fruits were chosen randomly at each trial from 25 fruit kinds. Ten of the 25 fruit drawings were adapted and redrawn from @kanwisher; we designed the remaining 15 fruit kinds. Each fruit kind has an instance in each of four colors (red, blue, green, or purple) and two sizes (big or small). There were two display types: unique target displays and contrastive displays. Unique target displays contain a target object that has a unique shape and is unique on the trial's critical feature (color or size), and two distractor objects that match each other's (but not the target's) shape and critical feature. Contrastive displays contain a target, its contrastive pair (matches the target's shape but not critical feature), and a lure (matches the target’s critical feature but not shape). The positions of the target and distractor items were randomized within a triad configuration.
 
-```{r e1-fig, fig.env = "figure*", fig.width=6, fig.height=3, fig.align = "center", set.cap.width=T, num.cols.cap=2, fig.cap = "Proportion of times that participants chose the target and lure items as a function of condition and whether an adjective was provided. Points indicate group means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping."}
+```{r e1-fig, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", set.cap.width=T, num.cols.cap=2, fig.cap = "Proportion of times that participants chose the target and lure items as a function of condition and whether an adjective was provided. Points indicate group means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping."}
 
 condition_names <- c(
                     "contrast" = "contrastive display",
@@ -301,7 +301,7 @@ $$Listener: P_{Learn}\left(r \vert u\right) \propto P_s\left(u \vert r\right)P\l
 
 This computation naturally predicts a number of phenomena in pragmatics. For example, RSA explains scalar implicature--listeners treat "I ate some of the cookies" as a poor description of a case where the speaker at all of the cookies. The speaker's statement is literally true--the speaker eating some of the cookies is consistent with a world in which they ate all of then. However, this statement is ambiguous--it is true of both the world in which some cookies remain and the world in which there are no cookies left. Thus, if the speaker intends to convey that they ate all of the cookies, saying "I ate some of the cookies" will cause the literal listener to guess the wrong world half of the time. In contrast, the statement "I ate all of the cookies" is consistent only with world in which all of the cookies were eaten. Thus, if the speaker ate all of the cookies, this statement would accomplish their goal of communicating the state of the world more effectively. Scalar implicature arises from exact this inference: If the speaker actually ate all of the cookies, they should have said "I ate all of the cookies" because that would be a better utterance than "I ate some of the cookies." Since they produced "some," it is more likely that they wanted to communicate about the other possible world [@frank2012]. 
 
-Extensions of this framework have successfully accounted for a variety of other pragmatic inferences, including  inference that speech is hyperbolic (e.g. waiting "a million years" means waiting a long time), inferring when speakers are being polite rather than truthful, and learning new words in ambiguous contexts [@goodman2014; @kao2014; @yoon2016; @frank2014]. Further, a recent extension of the framework using continuous rather than discrete semantics has given an account of the kinds of differences between color and size modification that we observed in our experimental data [@degen2020]. 
+Extensions of this framework have successfully accounted for a variety of other pragmatic inferences, including  inference that speech is hyperbolic (e.g. waiting "a million years" means waiting a long time), inferring when speakers are being polite rather than truthful, and learning new words in ambiguous contexts [@goodman2014; @kao2014; @yoon2016; @frank2014]. Further, a recent extension of the framework using continuous rather than discrete semantics has given an account of the kinds of differences between color and size modification that we observed in our experimental data [@degen_when_2020]. 
 
 For this experiment, we build on a Rational Speech Act model developed by @frank2014 to jointly resolve reference and learn words. The primary extension of RSA is that the pragmatic learner is a pragmatic listener who has has uncertainty about the meanings of words in their language, and thus cannot directly compute the speaker's utility as written. Instead, the speaker's utility is conditioned on the set of mappings, and the learners must also infer which set of mappings is correct:  
 
@@ -315,7 +315,49 @@ Having heard "Find the dax," the model must now choose a referent. If the true m
 
 If instead the speaker produced "find the small dax," the model will make a different inference. If the true mapping for "dax" is hair dryer ($m_2$), this utterance now uniquely identifies one referent for the literal listener and thus has high utility. It is also uniquely identifies the target if "dax" means pear ($m_1$). However, if "dax" means pear, the speaker's utterance was inefficient because the single word utterance "dax" would have identified the target to the literal listener and incurred less cost. Thus, the model can infer that "dax" is more likely to mean hair dryer and choose the small hair dryer appropriately.
 
-While these descriptions use deterministic language for clarity, the model's computation is probabilistic and thus reflects tendencies to choose those objects rather than fixed rules. Figure \ref{e1-model} shows model predictions alongside people's behavior for the size contrast condition in Experiment 1.
+While these descriptions use deterministic language for clarity, the model's computation is probabilistic and thus reflects tendencies to choose those objects rather than fixed rules. Figure \ref{fig:e1-webppl-plot} shows model predictions alongside people's behavior for the size and color contrast conditions in Experiment 1. In line with the intuition above, the model predicts that hearing a bare noun (e.g. "dax") should lead people to infer that the intended referent is the unique object (lure), whereas hearing a modified noun (e.g. "small dax") should lead people to infer that the speaker's intended referent is the target. 
+
+```{r e1-webppl}
+two_world_utterances <- tibble(utterance = c("dax", "blue dax"),
+                               utterance_num = as.character(1:2))
+
+two_world_inference <- map_dfr(two_world_utterances %>% pull(utterance),
+                               ~webppl(program_file =
+                                         here("webppl/discrete_semantics.wppl"),
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(two_world_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  mutate(utterance = if_else(utterance == "dax", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")),
+         obj = case_when(obj == "blue dax" & world_string == "two toma" ~ "lure",
+                         obj == "blue dax" & world_string == "two dax" ~ "target",
+                         obj != "blue dax" ~ NA_character_)) %>%
+  filter(!is.na(obj)) 
+  
+
+e1_webppl_data <- e1_mean_data %>%
+  filter(searchtype == "contrast") %>%
+  select(-searchtype) %>%
+  rename(utterance = adjective_used) %>%
+  left_join(two_world_inference, by = c("utterance", "item" = "obj")) %>%
+  mutate(prob_min = prob, prob_max = prob)
+```
+
+```{r e1-webppl-plot, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", fig.cap = "Proportion of times that people (and our model) chose the target and lure items as a function of adjective type and whether an adjective was provided. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid lines show model predictions."}
+ggplot(e1_webppl_data, aes(x = utterance, color = item, fill = item)) + 
+  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper),
+                      position = position_dodge(.5),) + 
+  geom_crossbar(aes(ymin = prob_min, ymax = prob_max, y = prob),
+                position = position_dodge(.5), width = .5,
+           alpha = .5, size = .5) + 
+  facet_wrap(~ condition) + 
+  labs(x = "", y = "item chosen")
+```
+
+Because the model we described has no way of distinguishing between color and size adjectives, it makes the same predictions for both. Based on or pilot studies, we pre-registered and observed an asymmetry in which contrast inferences would be stronger for size than color. Why do we see an asymmetry in people? A recent model from @degen_when_2020 does predict a color-size asymmetry. In this model, literal semantics are treated as continuous rather than discrete, so "blue" is neither 100% true or 100% false of a particular object, but can instead be 90% true. They successfully model a number of color/size asymmetries by treating color as having stronger literal semantics (i.e. "blue dax" is a better description of a small blue dax than "small dax" is). We implemented this model using the same semantic values of color and size as given in the paper, but found that this specification predicts the opposite asymmetry of what we found in the paper. Because color has stronger semantics than size, listeners show a stronger contrast effect for color than size. We show this effect in appendix A. 
+
+What does explain the asymmetry we observed? Some possibilities: 
 
 # Experiment 2
 
@@ -440,7 +482,7 @@ means <- e2_subj_data %>%
   tidyboot_mean(value)
 ```
 
-```{r meanplotinference, fig.env = "figure", fig.width=8, set.cap.width=T, num.cols.cap=1, fig.cap="The proportion of the novel category participants judged to have the feature of the target object, by condition. The left panel shows judgments on trials in which no adjective was used in the referring expression (e.g., 'Pass me the blicket'), and the right panel shows judgments on trials in which an adjective was used (e.g., 'Pass me the [purple/small] blicket'). This is crossed by the type of object context (contrast, different, same) on the x-axis."}
+```{r meanplotinference, fig.env = "figure", fig.width=8, fig.cap="The proportion of the novel category participants judged to have the feature of the target object, by condition. The left panel shows judgments on trials in which no adjective was used in the referring expression (e.g., 'Pass me the blicket'), and the right panel shows judgments on trials in which an adjective was used (e.g., 'Pass me the [purple/small] blicket'). This is crossed by the type of object context (contrast, different, same) on the x-axis."}
 ggplot(filter(means, measure == "percentage"),
        aes(x = adjective, color = condition)) + 
   facet_wrap(~searchtype) + 
