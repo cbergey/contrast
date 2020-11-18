@@ -1,0 +1,116 @@
+var EPSILON = .001
+
+var objects1 = [{color: "blue", shape: "toma", string: "blue toma"},
+               {color: "blue", shape: "dax", string: "blue dax"},
+               {color: "red", shape: "toma", string: "red toma"}]
+
+var objects2 = [{color: "blue", shape: "dax", string: "blue dax"},
+               {color: "blue", shape: "toma", string: "blue toma"},
+               {color: "red", shape: "dax", string: "red dax"}]
+
+var blue_target = function(p) {
+  Bernoulli({p: p}).score(true)
+}
+
+
+// set of utterances
+var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma"]
+var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
+
+var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
+              {objects: objects2, utterances: utterances2, string: "two dax"}]
+
+
+// prior over world states
+var worldsPrior = function() {
+  var world = uniformDraw(worlds)
+  return world
+}
+
+// prior over object states
+var objectPrior = function(objects) {
+  var obj = uniformDraw(objects)
+  return obj.string
+}
+
+// meaning function to interpret the utterances
+var meaning = function(utterance, obj){
+  _.includes(obj, utterance)
+}
+
+//typicality
+var typicality = function(obj, utterance, p) {
+   if(obj == utterance) {
+    return Math.log(1)
+   }
+
+   else if(_.includes(obj, "red") && _.includes(utterance, "blue") ||
+           _.includes(obj, "blue") && _.includes(utterance, "red") ||
+           _.includes(obj, "dax") && _.includes(utterance, "toma") ||
+           _.includes(obj, "toma") && _.includes(utterance, "dax")
+         ) {
+
+      return Math.log(EPSILON)
+   }
+
+   else if(_.includes(obj, "blue")) {
+    return blue_target(p)
+  }
+
+   else {
+    return blue_target(1 - p)
+  }
+
+}
+
+// literal listener
+var literalListener = function(world, utterance){
+  Infer({model: function(){
+    var obj = objectPrior(world.objects);
+    condition(meaning(utterance, obj))
+    return obj
+  }})
+}
+
+// utterance prior
+var utterancePrior = function(utterances) {
+  var utterance = uniformDraw(utterances)
+  return utterance
+}
+
+//cost is number of words
+var cost = function(utterance) {
+ return Math.log(utterance.split(" ").length + 1)
+ //return 0
+}
+
+// define actor optimality
+var alpha = 2
+
+// pragmatic speaker
+var speaker = function(world, obj, p){
+  Infer({model: function(){
+    var utterance = uniformDraw(world.utterances)
+    factor(alpha * (literalListener(world, utterance).score(obj) -
+      cost(utterance) + typicality(obj, utterance, p)))
+    return utterance
+  }})
+}
+
+// pragmatic listener
+var pragmaticListener = function(utterance){
+  Infer({method: 'rejection', samples: 5000, model: function(){
+    var world = worldsPrior()
+    var obj = objectPrior(world.objects)
+
+    var a = 2
+    var b = ((world.string == "two dax") && _.includes(obj, "dax") ||
+             (world.string == "two toma") && _.includes(obj, "toma")) ? 2 : 1
+
+    var p = sample(Beta({a: a, b: b}))
+    observe(speaker(world, obj, p), utterance)
+    return {world: world.string, obj: obj, p: p}
+  }})
+}
+
+pragmaticListener(_.first(data))

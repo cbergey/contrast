@@ -73,6 +73,7 @@ library(tidyboot)
 library(lmerTest)
 library(knitr)
 library(rwebppl)
+library(ggridges)
 
 theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 logit <- function(x) {log(x/(1-x))}
@@ -390,6 +391,11 @@ e2_subj_data <- e2_data %>%
 e2_mean_data <- e2_subj_data %>%
   group_by(searchtype, adjective, condition) %>%
   tidyboot_mean(percentage)
+
+
+ggplot(e2_subj_data %>% filter(adjective != "alien utterance"), aes(x = adjective, y = percentage)) + 
+  facet_grid(condition ~ searchtype) + 
+  geom_boxplot()
 ```
 
 In our first experiment, we examined whether adult listeners would interpret description as implying contrast with other present objects. However, as discussed earlier, description can imply contrast with sets other than the set of currently available referents. One of these alternative sets is the referent's category. Work by @mitchell_2013 and @westerbeek_2015 demonstrates that speakers use more description when referring to objects with atypical features (e.g., a yellow tomato) than typical ones (e.g., a red tomato). This marking of atypical objects potentially supplies useful information to listeners: they have the opportunity to not only learn about the object at hand, but also about its broader category. In the following experiment, we test whether listeners use this type of contrast to learn about unfamiliar objects' categories. 
@@ -426,7 +432,120 @@ We model the speaker as reasoning about the listener's label verification proces
  
 If speakers use this utility function, learners who do not know the feature distribution for a category can use speakers' production to infer it. Intuitively, speakers should prefer not to modify nouns with adjectives because they incur a cost for producing that adjective. If they did, it must be because they thought the learner would have a difficult time finding the referent from a bare noun alone because of typicality. To infer the true prevalence of the target feature in the category, learners combine the speaker's utterance with their prior beliefs about the prevalence distribution. We model the listener's prior about the prevalance of features in any category as a $\text{Beta}$ distribution with two parameters $\alpha$ and $\beta$ that encode the number of hypothesized prior psuedo-exemplars with the feature and without feature that the learner has previously observed (e.g. one red dax and one blue dax). We assume that the learner believes they have previously observed 1 hypothetical psuedo-examplar of each type, which is a weak symmetric prior indicating that the learner expects features to occur in half of all members of a category on average, but would find many levels of prevalence reasonably unsurprising. To model the learner's direct experience with the category, we add the observed instances in the experiment to these hypothesized prior instance. After observing one memember of the target category with the relevant feature and one without, the listeners prior is thus updated to be $\text{Beta}\left(2,\,2\right)$.
 
+```{r e2-webppl-markedness}
+markedness_utterances <- tibble(utterance = c("toma", "red toma"),
+                                utterance_num = as.character(1:2))
 
+markedness_inference <- map_dfr(markedness_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/markedness.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(markedness_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble() %>%
+  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")))
+
+
+markedness_means <- markedness_inference %>%
+  group_by(utterance) %>%
+  summarise(value = mean(value))
+```
+
+```{r e2-markedness, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", fig.cap = "Model estimates of typicality judgments for one object seen alone and labeled either [noun] or [adjective noun]."}
+ggplot(markedness_inference, aes(x = utterance, y = value)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_crossbar(aes(ymin = value, ymax = value, y = value), 
+                data = markedness_means, size = .5) + 
+  labs(x = "utterance", y = "proportion of [nouns] that are [adjective]")
+```
+
+
+
+```{r e2-webppl-markedness}
+markedness_utterances <- tibble(utterance = c("toma", "red toma"),
+                                utterance_num = as.character(1:2))
+
+markedness_inference <- map_dfr(markedness_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/markedness.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(markedness_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble() %>%
+  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")))
+
+
+markedness_means <- markedness_inference %>%
+  group_by(utterance) %>%
+  summarise(value = mean(value))
+```
+
+```{r joint-inference, eval = FALSE}
+joint_utterances <- tibble(utterance = c("toma", "blue toma"),
+                                utterance_num = as.character(1:2))
+
+joint_inference <- map_dfr(joint_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/two_world_typicality.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(joint_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble()
+```
+
+```{r joint-analysis}
+joint_data <- joint_inference %>%
+  pivot_wider(names_from = "Parameter") %>%
+  mutate(chosen = case_when(world == "two toma" ~ 
+                           gsub("toma", "pair", obj),
+                         world == "two dax" ~ 
+                           gsub("toma", "single", obj))) %>%
+  mutate(p = as.numeric(p),
+         utterance = factor(utterance, 
+                            levels = c("toma", "blue toma")))
+
+joint_data_obj <- joint_data %>%
+  group_by(utterance, chosen) %>%
+  count() %>%
+  group_by(utterance) %>%
+  mutate(prob = n/sum(n))
+
+ggplot(joint_data_obj, aes(x = chosen, y = prob, fill = chosen)) + 
+  geom_col(position = "dodge") + 
+  facet_wrap(~ utterance) + 
+  scale_fill_ptol(drop = FALSE) +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(x = "", y = "selection probability")
+
+ggplot(joint_data, aes(x = p, y = chosen)) +
+  facet_wrap(~ utterance) +
+  stat_density_ridges(scale = 1, 
+                      quantile_lines = TRUE, quantiles = 2) + 
+  scale_fill_ptol() +
+  scale_x_continuous(limits = c(0, 1)) +
+  labs(y = "object chosen", x = "proportion of tomas that are blue")
+
+joint_data_p <- joint_data %>%
+  ungroup() %>%
+  filter(utterance %in% c("toma", "blue toma"), chosen == "blue pair") %>%
+  select(-world, -Iteration, -Chain) %>%
+  mutate(type = "contrast")
+
+
+joint_data_subset <- joint_data %>%
+  filter(!utterance %in% c("red dax"), !chosen == "red pair") %>%
+  group_by(utterance, chosen) %>%
+  summarise(p = mean(p)) %>%
+  spread(utterance, p)
+
+```
 
 ## Discussion
 

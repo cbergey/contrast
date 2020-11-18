@@ -1,0 +1,78 @@
+var red_toma = function(p) {
+  Bernoulli({p: p}).score(true)
+
+}
+// set of utterances
+var utterances = ["toma", "red toma"]
+var objects = [{color: "red", shape: "toma", string: "red toma"}]
+
+// meaning function to interpret the utterances
+var meaning = function(utterance, obj){
+  _.includes(obj, utterance)
+}
+
+// prior over object states
+var objectPrior = function() {
+  var obj = uniformDraw(objects)
+  return obj.string
+}
+
+// literal listener
+var literalListener = function(utterance){
+  Infer({model: function(){
+    var obj = objectPrior();
+    condition(meaning(utterance, obj))
+    return obj
+  }})
+}
+
+// utterance prior
+var utterancePrior = function(utterances) {
+  var utterance = uniformDraw(utterances)
+  return utterance
+}
+
+//cost is number of words
+var cost = function(utterance) {
+ return Math.log(utterance.split(" ").length + 1)
+ //return 0
+}
+
+//typicality
+var typicality = function(obj, utterance, p) {
+   if(obj == utterance) {
+    return Math.log(1)
+   }
+
+   if(_.includes(obj, utterance)) {
+      return red_toma(p)
+   }
+
+}
+
+
+// define actor optimality
+var alpha = 2
+
+// pragmatic speaker
+var speaker = function(obj, p){
+  Infer({model: function(){
+    var utterance = uniformDraw(utterances)
+
+    factor(alpha * (literalListener(utterance).score(obj) - cost(utterance)
+            + typicality(obj, utterance, p)))
+    return utterance
+  }})
+}
+
+// pragmatic listener
+var pragmaticListener = function(utterance){
+  Infer({method: 'rejection', samples: 1000, model: function(){
+    var obj = objectPrior()
+    var p = sample(Beta({a: 2, b: 1}))
+    observe(speaker(obj, p), utterance)
+    return p
+  }})
+}
+
+pragmaticListener(_.first(data))
