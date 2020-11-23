@@ -366,9 +366,11 @@ What does explain the asymmetry we observed? Some possibilities:
 e2_color_data <- read_csv(here("data/exp2/color.csv")) %>%
   mutate(condition = "color", targetsize = "big") %>%
   rename(adj = colorasked, distractorfeature = distractorcolor)
+
 e2_size_data <- read_csv(here("data/exp2/size.csv")) %>%
   mutate(condition = "size") %>%
   rename(adj = sizeasked, distractorfeature = distractorsize)
+
 e2_data <- rbind(e2_color_data, e2_size_data)
 
 e2_keep_subjs <- e2_data %>%
@@ -471,25 +473,93 @@ ggplot(markedness_inference, aes(x = utterance, y = value)) +
 
 
 
-```{r e2-webppl-markedness-2}
-markedness_utterances <- tibble(utterance = c("toma", "red toma"),
+```{r e2-contrast-webbpl}
+e2_contrast_utterances <- tibble(utterance = c("toma", "red toma"),
                                 utterance_num = as.character(1:2))
 
-markedness_inference <- map_dfr(markedness_utterances %>% pull(utterance), 
+e2_contrast_inference <- map_dfr(e2_contrast_utterances %>% pull(utterance), 
                                ~webppl(program_file = 
-                                         here("webppl/markedness.wppl"), 
+                                         here("webppl/e2_contrast.wppl"), 
                                        data = .x),
                                .id = "utterance_num") %>%
-  left_join(markedness_utterances, by = "utterance_num") %>%
+  left_join(e2_contrast_utterances, by = "utterance_num") %>%
   select(-utterance_num) %>%
   as_tibble() %>%
   mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
          utterance = factor(utterance, levels = c("noun", "adjective noun")))
 
 
-markedness_means <- markedness_inference %>%
+e2_contrast_means <- e2_contrast_inference %>%
+  pivot_wider(names_from = Parameter, values_from = value) %>%
+  mutate(p = as.numeric(p)) %>%
+  filter(obj == "red toma") %>%
   group_by(utterance) %>%
-  summarise(value = mean(value))
+  summarise(p = mean(p)) %>%
+  mutate(searchtype = "contrast", condition = "color")
+```
+
+
+```{r e2-same-webppl}
+e2_same_inference <- map_dfr(e2_contrast_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/e2_same.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(e2_contrast_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble() %>%
+  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")))
+
+
+e2_same_means <- e2_same_inference %>%
+  pivot_wider(names_from = Parameter, values_from = value) %>%
+  mutate(p = as.numeric(p)) %>%
+  filter(obj == "red toma", world == "target world") %>%
+  group_by(utterance) %>%
+  summarise(p = mean(p)) %>%
+  mutate(searchtype = "same", condition = "color")
+```
+
+
+```{r e2-same-webppl}
+e2_different_inference <- map_dfr(e2_contrast_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/e2_different.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(e2_contrast_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble() %>%
+  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")))
+
+
+e2_different_means <- e2_different_inference %>%
+  pivot_wider(names_from = Parameter, values_from = value) %>%
+  mutate(p = as.numeric(p)) %>%
+  filter(obj == "red toma", world == "target world") %>%
+  group_by(utterance) %>%
+  summarise(p = mean(p)) %>%
+  mutate(searchtype = "different", condition = "color")
+```
+
+```{r}
+
+e2_wppl_data <- bind_rows(e2_contrast_means, e2_same_means, 
+                          e2_different_means) %>%
+  mutate(p = 100 * p) %>%
+  rename(empirical_stat = p, adjective = utterance)
+
+ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat, 
+                         color = searchtype, fill = searchtype)) + 
+  facet_wrap(~ condition) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
+                  position = position_dodge(.5)) + 
+  theme(legend.position = "top") + 
+  geom_col(data = e2_wppl_data, width = .5, 
+           position = position_dodge(.5), alpha = .5) + 
+  geom_hline(aes(yintercept = 50), linetype = "dashed")
 ```
 
 ```{r joint-inference, eval = FALSE}
