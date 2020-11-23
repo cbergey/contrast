@@ -382,22 +382,25 @@ e2_model_data <- e2_data %>%
 e2_subj_data <- e2_data %>%
   filter(subid %in% e2_keep_subjs$subid) %>%
   filter(trialtype != 0) %>%
-  mutate(searchtype = if_else(searchtype == "differentshapes",
+  rename(adjective = adj) %>%
+  mutate(searchtype = if_else(searchtype == "polychrome" | 
+                                searchtype == "differentsizes",
                                       "different", searchtype)) %>%
+  mutate(searchtype = if_else(searchtype == "monochrome" |
+                                searchtype == "samesize",
+                                      "same", searchtype)) %>%
   mutate(rtsearch = rtsearch - 6500) %>%
   mutate(log_rt = log(rtsearch)) %>%
-  mutate(adjective = if_else(utttype == "adj", "adjective noun", utttype),
-         adjective = if_else(adjective == "noutt", "alien utterance", adjective),
-         adjective = if_else(adjective == "noadj", "noun", adjective),
-         adjective = factor(adjective, levels = c("noun", "adjective noun", "alien utterance")),
-         searchtype = factor(searchtype, levels = c("contrast", "different")))
+  mutate(adjective = if_else(adjective == TRUE, "adjective noun", "noun"),
+         adjective = factor(adjective, levels = c("noun", "adjective noun")),
+         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
 
 e2_mean_data <- e2_subj_data %>%
   group_by(searchtype, adjective, condition) %>%
   tidyboot_mean(percentage)
 
 
-ggplot(e2_subj_data %>% filter(adjective != "alien utterance"), aes(x = adjective, y = percentage)) + 
+ggplot(e2_subj_data, aes(x = adjective, y = percentage)) + 
   facet_grid(condition ~ searchtype) + 
   geom_boxplot()
 ```
@@ -468,7 +471,7 @@ ggplot(markedness_inference, aes(x = utterance, y = value)) +
 
 
 
-```{r e2-webppl-markedness}
+```{r e2-webppl-markedness-2}
 markedness_utterances <- tibble(utterance = c("toma", "red toma"),
                                 utterance_num = as.character(1:2))
 
