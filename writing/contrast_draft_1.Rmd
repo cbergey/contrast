@@ -522,7 +522,7 @@ e2_same_means <- e2_same_inference %>%
 ```
 
 
-```{r e2-same-webppl}
+```{r e2-different-webppl}
 e2_different_inference <- map_dfr(e2_contrast_utterances %>% pull(utterance), 
                                ~webppl(program_file = 
                                          here("webppl/e2_different.wppl"), 
@@ -576,7 +576,7 @@ joint_inference <- map_dfr(joint_utterances %>% pull(utterance),
   as_tibble()
 ```
 
-```{r joint-analysis}
+```{r joint-analysis, eval = FALSE}
 joint_data <- joint_inference %>%
   pivot_wider(names_from = "Parameter") %>%
   mutate(chosen = case_when(world == "two toma" ~ 
