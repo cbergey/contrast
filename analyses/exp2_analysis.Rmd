@@ -1,145 +1,97 @@
 ---
-title: "exp2_analysis"
+title: "griceinferencemturk"
 output: html_document
 ---
 
-```{r libraries}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
-               error = FALSE, cache = TRUE, tidy = FALSE)
-
+```{r load_libraries}
 library(tidyverse)
-library(jsonlite)
 library(here)
+library(ggthemes)
 library(tidyboot)
-library(anonymizer)
 library(lme4)
-library(lmerTest)
-library(broom.mixed)
-
-
 theme_set(theme_classic(base_size = 18))
 ```
 
-```{r data}
-data <- read_csv(here("data/exp2_turk_data.csv")) %>%
-  mutate(attncheckscore = str_remove(attncheckscore, "\n"),
-         attncheckscore = as.numeric(attncheckscore))
-
-failed_attention_check = data %>%
-  filter(searchtype == "attncheck", attncheckscore < 6) %>%
-  distinct(subid) %>%
-  pull()
-
-length(failed_attention_check)
-
-failed_color_check <- data %>%
-  filter(searchtype == "colorcheck", chosetarget) %>%
-  group_by(subid) %>%
-  count() %>%
-  filter(n < 4) %>%
-  pull(subid)
-
-setdiff(failed_color_check, failed_attention_check) %>%
-  length()
-
-length(failed_color_check)
-
-
-keep_subjs <- data %>%
-  filter(!subid %in% failed_attention_check, 
-         !subid %in% failed_color_check)
-
-length(distinct(keep_subjs, subid) %>% pull())
-
-subj_data <- keep_subjs %>%
-  filter(trialtype != 0)
-
-mean_data <- subj_data %>%
-  group_by(searchtype, utttype, condition) %>%
-  tidyboot_mean(percentage)
+```{r load_files_contrast_feature}
+files <- list.files(("~/Documents/contrast-feature-inference-size-cosub-jun_16_19/production-results/"), 
+                    pattern = ".json", full.names = T, recursive = T) 
+read_grice_file <- function(file, newnames) {
+  
+    json_out <- fromJSON(file)
+    id <- json_out$WorkerId
+    
+    raw_data <- json_out$answers$data 
+    
+    cols <- raw_data[1] %>%
+      str_split(",") %>%
+      unlist() %>%
+      str_trim()
+      
+    raw_data[] %>%
+      enframe(name = NULL) %>%
+      slice(-1) %>%
+      separate(value, into = cols, sep = ",") %>%
+      mutate(subid = id)
+}
+data <- map_df(files, read_grice_file)  %>% 
+  mutate(subid = salt(subid, .seed = 400)) %>%
+  mutate(subid = as.numeric(as.factor(subid)))
+write_csv(data, here("/Documents/contrastdata/turk_data_category_inference_size.csv"))
 ```
 
-```{r plots}
-p1 <- mean_data %>%
-  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
-  filter(utttype != "noutt") %>%
-  ggplot(aes(x = utttype, color = condition)) +
+```{r read_inference_data}
+colordata <- read_csv("~/Documents/contrastdata/turk_data_category_inference_color.csv") %>%
+  mutate(colorasked = colorasked == "TRUE")
+
+sizedata <- read_csv("~/Documents/contrastdata/turk_data_category_inference_size.csv") %>%
+  mutate(sizeasked = sizeasked == "TRUE")
+```
+
+```{r mean_color}
+mean_data_color <- colordata %>%
+  filter(searchtype != "attncheck") %>%
+  group_by(searchtype, colorasked, subid) %>%
+  summarise(percentage = mean(percentage), n = n()) %>%
+  tidyboot_mean(percentage) %>%
+  ungroup() %>%
+  mutate(colorasked = factor(colorasked, labels = c("noun", "adjective noun")))
+```
+
+```{r mean_size}
+mean_data_size <- sizedata %>%
+  filter(searchtype != "attncheck") %>%
+  group_by(searchtype, sizeasked, subid) %>%
+  summarise(percentage = mean(percentage), n = n()) %>%
+  tidyboot_mean(percentage) %>%
+  ungroup() %>%
+  mutate(sizeasked = factor(sizeasked, labels = c("noun", "adjective noun")))
+```
+
+```{r unique, fig.width = 10}
+ggplot(mean_data_color,
+       aes(x = searchtype)) +
+  facet_wrap(~colorasked) + 
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
                   position = position_dodge(.5)) + 
-  facet_wrap(~searchtype) +
-    theme(rect = element_rect(fill = "transparent"),
-          panel.background = element_rect(fill = "transparent",colour = NA))  +
-    scale_colour_manual(values=c("#ff8e2a", "#5c8b14", "#66CC99"))+ 
-  labs(y = "prevalance (percentage)")
+  ylab("percentage") + 
+  xlab("")
 
-
-p1
-
-#ggsave(p1, filename = "exp2_p1.png",  bg = "transparent")
-
-
-ggplot(mean_data, aes(x = searchtype, color = utttype)) + 
-           geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
+ggplot(mean_data_size,
+       aes(x = searchtype)) +
+  facet_wrap(~sizeasked) + 
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
                   position = position_dodge(.5)) + 
-  facet_wrap(~condition) + 
-  labs(y = "prevalance (percentage)")
+  ylab("percentage") + 
+  xlab("")
 
-```
+colordataexcluded <- colordata %>%
+  filter(searchtype != "attncheck")
 
-```{r models}
-# all prereg'd models below
+colormodel <- lmer(percentage ~ searchtype * colorasked + (1|subid), data = colordataexcluded)
 
-utt_model_no_alien <- subj_data %>%
-  filter(utttype != "noutt") %>%
-  lmer(percentage ~ utttype + (utttype|subid), data = .) %>%
-  tidy(effects = "fixed")
+sizedataexcluded <- sizedata %>%
+  filter(searchtype != "attncheck")
 
-utt_model_no_alien
+sizemodel <- lmer(percentage ~ searchtype * sizeasked + (1|subid), data = sizedataexcluded)
 
-utt_model <- subj_data %>%
-  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
-  lmer(percentage ~ utttype + (utttype | subid), data = .) %>%
-  tidy() %>%
-  filter(effect == "fixed")
-
-utt_model
-
-# model did not converge with maximal slopes
-full_model <- subj_data %>%
-  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
-  lmer(percentage ~ utttype * searchtype * condition + 
-         (utttype | subid), data = .) %>%
-  tidy() %>%
-  filter(effect == "fixed") %>%
-  select(-effect, -group) %>%
-  mutate(p.value = papaja::printp(p.value))
-
-full_model
-```
-
-```{r no-baseline}
-no_baseline_model <- subj_data %>%
-  filter(utttype != "noutt") %>%
-  lmer(percentage ~ utttype + searchtype  + condition + 
-         (utttype | subid), data = .) %>%
-  tidy() %>%
-  filter(effect == "fixed") %>%
-  select(-effect, -group) %>%
-  mutate(p.value = papaja::printp(p.value))
-
-no_baseline_model
-```
-
-```{r size-only}
-size_only_model <- subj_data %>%
-  filter(condition == "size") %>%
-  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
-  lmer(percentage ~ searchtype * utttype +  
-         (utttype | subid), data = .) %>%
-  tidy() %>%
-  filter(effect == "fixed") %>%
-  select(-effect, -group) %>%
-  mutate(p.value = papaja::printp(p.value))
-
-size_only_model
 ```

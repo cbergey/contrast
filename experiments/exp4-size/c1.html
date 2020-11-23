@@ -58,44 +58,70 @@
       <center><div id="sinstructions1"> </div></center>
       
       <center>
-      <div class="row">
-        <div class="col-xs-3">
-          <img id="alien1" class="img-responsive" style="padding:30">
+        <div class="row">
+          <div class="col-xs-3">
+            <img id="alien1" class="img-responsive" style="padding:30">
+          </div>
+          <div class="col-xs-3">
+            <img id="bubble1" class="img-responsive" style="padding:5">
+            <div id="speech1" class="top-left"></div>
+          </div>
+
+          <div class="col-xs-3">
+            <img id="bubble2" class="img-responsive" style="padding:5">
+            <div id="speech2" class="top-left"></div>
+          </div>
+          <div class="col-xs-3">
+            <img id="alien2" class="img-responsive" style="padding:30">
+          </div>
         </div>
-        <div class="col-xs-3">
-          <img id="bubble1" class="img-responsive" style="padding:30">
-          <div id="speech1" class="top-left"></div>
+        <div class="row">
+          <div class="col-xs-3">
+            <div class="row">
+              <div class="col-xs-6">
+                <img id="sobject1" class="img-responsive" style="padding:5">
+              </div>
+              <div class="col-xs-6">
+                <img id="sobject2" class="img-responsive" style="padding:5">
+              </div>
+            </div>
+          </div>
+          <div class="col-xs-3">
+            <div class="row">
+              <div class="col-xs-6">
+                <img id="sobject3" class="img-responsive" style="padding:5">
+              </div>
+              <div class="col-xs-6">
+                <img id="receiver" class="img-responsive" style="padding:5">
+              </div>
+            </div>
+          </div>
+          <div class="col-xs-3">
+            <div class="row">
+              <div class="col-xs-6">
+                <img id="emptyslot" class="img-responsive" style="padding:5">
+              </div>
+              <div class="col-xs-6">
+                <img id="sobject4" class="img-responsive" style="padding:5">
+              </div>
+            </div>
+          </div>
+          <div class="col-xs-3">
+           <div class="row">
+            <div class="col-xs-6">
+              <img id="sobject5" class="img-responsive" style="padding:5">
+            </div>
+            <div class="col-xs-6">
+              <img id="sobject6" class="img-responsive" style="padding:5">
+            </div>
+          </div>
         </div>
-        <div class="col-xs-3">
-          <img id="bubble2" class="img-responsive" style="padding:30">
-          <div id="speech2" class="top-left"></div>
-        </div>
-        <div class="col-xs-3">
-          <img id="alien2" class="img-responsive" style="padding:30">
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-xs-2">
-          <img id="sobject1" class="img-responsive" style="padding:30">
-        </div>
-        <div class="col-xs-2">
-          <img id="sobject2" class="img-responsive" style="padding:30">
-        </div>
-        <div class="col-xs-2">
-          <img id="receiver" class="img-responsive" style="padding:30">
-        </div>
-        <div class="col-xs-2">
-          <img id="emptyslot" class="img-responsive" style="padding:30">
-        </div>
-        <div class="col-xs-2">
-          <img id="sobject3" class="img-responsive" style="padding:30">
-        </div>
-        <div class="col-xs-2">
-          <img id="sobject4" class="img-responsive" style="padding:30">
-        </div>
+        <div class="clearfix visible-xs"></div>
       </div>
     </center>
     <div id="sselector" class = "border"></div>
+
+    <center><div id="sinstructions2"> </div></center>
     
     <center><button type="button" id="totestbutton">Next</button></center>
   </div>
@@ -197,7 +223,7 @@
 
   <div class="slide" id="secondInstructions">
     <p class="block-text"> In this task, you will see aliens talk about and exchange alien objects, and you will be asked questions about these objects. </p> 
-    <p class="block-text"> Sometimes the aliens will be using completely alien language, and sometimes parts of it will be translated into English. Please pay attention to the aliens' objects and behavior. Press the button below to start the experiment. </p> 
+    <p class="block-text"> Please pay attention to the aliens' objects and behavior. Press the button below to start the experiment. </p> 
     <center><input type="submit" value="Next" onClick="this.blur(); experiment.startExperiment()"></center>
   </div>
 

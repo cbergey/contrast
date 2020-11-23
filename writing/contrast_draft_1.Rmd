@@ -363,13 +363,17 @@ What does explain the asymmetry we observed? Some possibilities:
 # Experiment 2
 
 ```{r e2-read-data}
-e2_data <- read_csv(here("data/exp2_turk_data.csv"))
+e2_color_data <- read_csv(here("data/exp2/color.csv")) %>%
+  mutate(condition = "color", targetsize = "big") %>%
+  rename(adj = colorasked, distractorfeature = distractorcolor)
+e2_size_data <- read_csv(here("data/exp2/size.csv")) %>%
+  mutate(condition = "size") %>%
+  rename(adj = sizeasked, distractorfeature = distractorsize)
+e2_data <- rbind(e2_color_data, e2_size_data)
 
 e2_keep_subjs <- e2_data %>%
-  filter(searchtype == "colorcheck", chosetarget == TRUE, attncheckscore >= 6) %>%
-  group_by(subid) %>%
-  count() %>%
-  filter(n == 4)
+  filter(searchtype == "attncheck", attncheckscore >= 6) %>%
+  group_by(subid) 
 
 e2_model_data <- e2_data %>%
   filter(subid %in% e2_keep_subjs$subid) %>%

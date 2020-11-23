@@ -1,0 +1,146 @@
+---
+title: "exp3_analysis"
+output: html_document
+---
+
+```{r libraries}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+               error = FALSE, cache = TRUE, tidy = FALSE)
+
+library(tidyverse)
+library(jsonlite)
+library(here)
+library(tidyboot)
+library(anonymizer)
+library(lme4)
+library(lmerTest)
+library(broom.mixed)
+
+
+theme_set(theme_classic(base_size = 18))
+```
+
+```{r data}
+data <- read_csv(here("data/exp3_turk_data.csv")) %>%
+  mutate(attncheckscore = str_remove(attncheckscore, "\n"),
+         attncheckscore = as.numeric(attncheckscore))
+
+failed_attention_check = data %>%
+  filter(searchtype == "attncheck", attncheckscore < 6) %>%
+  distinct(subid) %>%
+  pull()
+
+length(failed_attention_check)
+
+failed_color_check <- data %>%
+  filter(searchtype == "colorcheck", chosetarget) %>%
+  group_by(subid) %>%
+  count() %>%
+  filter(n < 4) %>%
+  pull(subid)
+
+setdiff(failed_color_check, failed_attention_check) %>%
+  length()
+
+length(failed_color_check)
+
+
+keep_subjs <- data %>%
+  filter(!subid %in% failed_attention_check, 
+         !subid %in% failed_color_check)
+
+length(distinct(keep_subjs, subid) %>% pull())
+
+subj_data <- keep_subjs %>%
+  filter(trialtype != 0)
+
+
+mean_data <- subj_data %>%
+  group_by(searchtype, utttype, condition) %>%
+  tidyboot_mean(percentage)
+```
+
+```{r plots}
+p1 <- mean_data %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  filter(utttype != "noutt") %>%
+  ggplot(aes(x = utttype, color = condition)) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
+                  position = position_dodge(.5)) + 
+  facet_wrap(~searchtype) +
+    theme(rect = element_rect(fill = "transparent"),
+          panel.background = element_rect(fill = "transparent",colour = NA))  +
+    scale_colour_manual(values=c("#ff8e2a", "#5c8b14", "#66CC99"))+ 
+  labs(y = "prevalance (percentage)")
+
+
+p1
+
+#ggsave(p1, filename = "exp3_p1.png",  bg = "transparent")
+
+
+ggplot(mean_data, aes(x = searchtype, color = utttype)) + 
+           geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper, y = empirical_stat),
+                  position = position_dodge(.5)) + 
+  facet_wrap(~condition) + 
+  labs(y = "prevalance (percentage)")
+
+```
+
+```{r models}
+# all prereg'd models below
+
+utt_model_no_alien <- subj_data %>%
+  filter(utttype != "noutt") %>%
+  lmer(percentage ~ utttype + (utttype|subid), data = .) %>%
+  tidy(effects = "fixed")
+
+utt_model_no_alien
+
+utt_model <- subj_data %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  lmer(percentage ~ utttype + (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed")
+
+utt_model
+
+# model did not converge with maximal slopes
+full_model <- subj_data %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  lmer(percentage ~ utttype * searchtype * condition + 
+         (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  select(-effect, -group) %>%
+  mutate(p.value = papaja::printp(p.value))
+
+full_model
+```
+
+```{r no-baseline}
+no_baseline_model <- subj_data %>%
+  filter(utttype != "noutt") %>%
+  lmer(percentage ~ utttype + searchtype  + condition + 
+         (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  select(-effect, -group) %>%
+  mutate(p.value = papaja::printp(p.value))
+
+no_baseline_model
+```
+
+```{r size-only}
+size_only_model <- subj_data %>%
+  filter(condition == "size") %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  lmer(percentage ~ searchtype * utttype +  
+         (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  select(-effect, -group) %>%
+  mutate(p.value = papaja::printp(p.value))
+
+size_only_model
+```

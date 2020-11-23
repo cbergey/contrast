@@ -6,6 +6,7 @@
 
 // ---------------- PARAMETERS ------------------
 
+// must be a multiple of 4 
 var numtrials = 6;
 
 // ---------------- HELPER ------------------
@@ -61,13 +62,12 @@ var sizes = ["big","small"];
 
 var words = [["dax","daxes"], ["blicket","blickets"], ["wug","wugs"], ["toma", "tomas"], ["gade", "gades"], ["sprock", "sprocks"]];
 
-var trialtypes = [3,4,5,6];
+var trialtypes = [1,2,3,4,5,6];
 
 var checkwords = ["wug", "gade", "toma", "blicket"]
 
 var foilwords = ["almo", "warb", "fugle", "larby"]
 
-var colorchecks = [["red","green"],["blue","green"],["blue","purple"],["red","purple"]];
 
 
 
@@ -90,9 +90,7 @@ var experiment = {
 
 	observationtype: "",
 
-	chosetarget: false,
-
-	utttype: "",
+	sizeasked: "",
 
 	searchtype: "",
 
@@ -139,8 +137,6 @@ var experiment = {
 
 	foilpos: 0,
 
-	condition: "size",
-
 	attncheckscore: 0,
 
 
@@ -169,10 +165,28 @@ var experiment = {
     		$("#stage").fadeOut();
     	}, 100);
 
-    	
+    	var thisword = ""
+		for (i = 0; i < checkwords.length; i++) {
+			thisword = "#" + checkwords[i]
+			if ($(thisword).is(":checked")) {
+				experiment.attncheckscore++;
+			}
+		}
+		for (i = 0; i < foilwords.length; i++) {
+			thisword = "#" + foilwords[i]
+			if (!$(thisword).is(":checked")) {
+				experiment.attncheckscore++;
+			}
+		}
+
 		setTimeout(function () {
     		$("#searchstage").fadeOut();
     	}, 100);
+
+
+		experiment.trialtype = 0
+		experiment.searchtype = "attncheck"
+		experiment.processOneRow();
     	
     	setTimeout(function() { turk.submit(experiment, true) }, 1500);
     	showSlide("finish");
@@ -183,10 +197,10 @@ var experiment = {
 
 	//concatenates all experimental variables into a string which represents one "row" of data in the eventual csv, to live in the server
 	processOneRow: function() {
-		var dataforRound = experiment.subid + "," + experiment.condition; 
+		var dataforRound = experiment.subid; 
 		dataforRound += "," + experiment.counter + "," + experiment.trialtype + "," + experiment.percentage;
-		dataforRound += "," + experiment.utttype;
-		dataforRound += "," + experiment.searchtype + "," + experiment.targetshape + "," + experiment.targetcolor + "," + experiment.targetsize + "," + experiment.targetword[0] + "," + experiment.chosetarget;
+		dataforRound += "," + experiment.sizeasked;
+		dataforRound += "," + experiment.searchtype + "," + experiment.targetshape + "," + experiment.targetcolor + "," + experiment.targetsize + "," + experiment.targetword[0];
 		dataforRound += "," + experiment.distractorshape1 + "," + experiment.distractorshape2 + "," + experiment.distractorsize;
 		dataforRound += "," + experiment.date + "," + experiment.timestamp + "," + experiment.rtsearch + "," + experiment.rttest + "," + experiment.targetpos + "," + experiment.foilpos + "," + experiment.attncheckscore + "\n";
 		experiment.data.push(dataforRound);	
@@ -218,18 +232,18 @@ var experiment = {
 
 		experiment.trialtype = experiment.trialtypes[experiment.counter - 1];
 
-		if (experiment.trialtype%2 == 0) {
-			experiment.searchtype = "contrast";
-		} else {
-			experiment.searchtype = "differentshapes";
-		} 
-
 		if (experiment.trialtype == 1 || experiment.trialtype == 2) {
-			experiment.utttype = "noutt";
+			experiment.searchtype = "contrast";
 		} else if (experiment.trialtype == 3 || experiment.trialtype == 4) {
-			experiment.utttype = "adj";
+			experiment.searchtype = "differentsizes";
 		} else if (experiment.trialtype == 5 || experiment.trialtype == 6) {
-			experiment.utttype = "noadj";
+			experiment.searchtype = "samesize";
+		}
+
+		if (experiment.trialtype%2 == 0) {
+			experiment.sizeasked = true;
+		} else {
+			experiment.sizeasked = false;
 		}
 
 
@@ -299,7 +313,7 @@ var experiment = {
 						$(object).attr("src", "stim-images/object" + experiment.distractorshape2 + experiment.targetcolor + experiment.targetsize + ".jpg");
 					}
 				}
-  			} else if (experiment.searchtype == "differentshapes") {
+  			} else if (experiment.searchtype == "differentsizes") {
 				for (i = 0; i < rightstims.length; i++) {
 					if (rightstims[i] == "target") {
 						var targetnum = 2+i+1;
@@ -319,15 +333,33 @@ var experiment = {
 						$(object).attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + experiment.distractorsize + ".jpg");
 					}
 				}
-  			} 
+  			} else if (experiment.searchtype == "samesize") {
+				for (i = 0; i < rightstims.length; i++) {
+					if (rightstims[i] == "target") {
+						var targetnum = 2+i+1;
+						var targetobject = "#sobject" + targetnum;
+						experiment.targetpos = 2+i+1;
+						$(targetobject).attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + experiment.targetsize + ".jpg");
+					} else if (rightstims[i] == "distractor1") {
+						var object = "#sobject" + (2+i+1);
+						$(object).attr("src", "stim-images/object" + experiment.distractorshape2 + experiment.targetcolor + experiment.targetsize + ".jpg");
+					}
+					if (leftstims[i] == "distractor2") {
+						var object = "#sobject" + (i+1);
+						$(object).attr("src", "stim-images/object" + experiment.distractorshape1 + experiment.targetcolor + experiment.distractorsize + ".jpg");
+					} else if (leftstims[i] == "distractor3") {
+						var object = "#sobject" + (i+1);
+						experiment.foilpos = i+1;
+						$(object).attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + experiment.distractorsize + ".jpg");
+					}
+				}
+  			}
 	
 
-			if (experiment.utttype == "adj") {
+			if (experiment.sizeasked == true) {
 				$("#speech1").html("Hey, pass me the <b>" + experiment.targetsize + " " +  experiment.targetword[0] + "</b>.");
-			} else if (experiment.utttype == "noadj") {
+			} else {
 				$("#speech1").html("Hey, pass me the <b>" + experiment.targetword[0] + "</b>.");
-			} else if (experiment.utttype == "noutt") {
-				$("#speech1").html("Zem, noba bi yix <b>" + experiment.targetword[0] + "</b>.");
 			}
 			
 			
@@ -357,11 +389,7 @@ var experiment = {
 
 		    setTimeout(function() {
 					$("#bubble2").attr("src", "stim-images/speechbubble2.jpg");
-					if (experiment.utttype == "noutt") {
-						$("#speech2").html("Pila rem sa!");
-					} else {
-						$("#speech2").html("Here you go!");
-					}
+					$("#speech2").html("Here you go!");
 					$("#bubble2").fadeTo(0,1)
 					$("#speech2").fadeTo(0,1)
 					$("#bubble2").show()
@@ -409,7 +437,7 @@ var experiment = {
 			clickDisabled = true;
   	 		$( "#nexttrialbutton" ).attr('disabled', true);
 
-	    	$("#tinstructions").html("On this planet, what percentage of <b>" + experiment.targetword[1] + "</b> do you think are the size shown below? <br> Use the slider below to indicate a response.");
+	    	$("#tinstructions").html("On this planet, what percentage of " + experiment.targetword[1] + " do you think are the size shown below? <br> Use the slider below to indicate a response.");
 	    	$("#tinstructions").show();
 
 	    	$("#targetimg").attr("src", "stim-images/object" + experiment.targetshape + experiment.targetcolor + experiment.targetsize + ".jpg");
@@ -425,112 +453,13 @@ var experiment = {
 		
 	},
 
-	colorcheck: function() {
-
-		if (experiment.counter == numtrials + 1) {
-			var thisword = ""
-			for (i = 0; i < checkwords.length; i++) {
-				thisword = "#" + checkwords[i]
-				if ($(thisword).is(":checked")) {
-					experiment.attncheckscore++;
-				}
-			}
-			for (i = 0; i < foilwords.length; i++) {
-				thisword = "#" + foilwords[i]
-				if (!$(thisword).is(":checked")) {
-					experiment.attncheckscore++;
-				}
-			}
-
-			
-			$("#attnCheck").fadeOut();
-			
-
-			experiment.percentage = 0
-			experiment.utttype = ""
-			experiment.trialtype = 0
-			experiment.targetcolor = ""
-			experiment.targetsize = ""
-			experiment.targetshape = 0
-			experiment.targetword = ""
-			experiment.searchtype = "attncheck"
-			experiment.processOneRow();
-			experiment.counter++;
-		}
-
-		experiment.searchtype = "colorcheck"
-
-		if (experiment.counter > numtrials + 5) {
-			experiment.end()
-		} else {
-			experiment.pick = Math.floor(Math.random() * 2);
-			experiment.targetcolor = colorchecks[experiment.counter - 8][0]
-			experiment.distractorcolor1 = colorchecks[experiment.counter - 8][1]
-			$("#cinstructions").text("Pick the " + experiment.targetcolor + " one.")
-
-			if (experiment.pick == 1) {
-				$("#cobject1").attr("src", "stim-images/object" + experiment.counter + experiment.distractorcolor1 + ".jpg");
-				$("#cobject2").attr("src", "stim-images/object" + experiment.counter + experiment.targetcolor + ".jpg");
-			} else {
-				$("#cobject1").attr("src", "stim-images/object" + experiment.counter + experiment.targetcolor + ".jpg");
-				$("#cobject2").attr("src", "stim-images/object" + experiment.counter + experiment.distractorcolor1 + ".jpg");
-			}
-			if (experiment.counter == numtrials + 2) {
-				$( "#cobject1" ).click(function() {
-					if (experiment.canclick) {
-						experiment.canclick = false;
-						if (experiment.pick == 0) {
-							experiment.chosetarget = true;
-						} else {
-							experiment.chosetarget = false;
-						}
-						$("#colorcheck").fadeOut(50);
-						experiment.processOneRow();
-
-						experiment.counter++;
-
-						setTimeout(function() {
-							experiment.colorcheck();
-						}, 100);
-					}
-				});
-				$( "#cobject2" ).click(function() {
-					if (experiment.canclick) {
-						experiment.canclick = false;
-						if (experiment.pick == 1) {
-							experiment.chosetarget = true;
-						} else {
-							experiment.chosetarget = false;
-						}
-						$("#colorcheck").fadeOut(50);
-						experiment.processOneRow();
-
-						experiment.counter++;
-
-						setTimeout(function() {
-							experiment.colorcheck();
-						}, 100);
-					}
-				});
-			}
-
-			
-			experiment.canclick = true;
-			setTimeout(function(){$("#colorcheck").fadeIn(500)},1000);
-
-		}
-	},
-
 	start: function() {
 
 		// put column headers in data file
-		experiment.data.push("subid, condition, counter, trialtype, percentage, utttype, searchtype, targetshape, targetcolor, targetsize, targetword, chosetarget, distractorshape1, distractorshape2, distractorsize, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
+		experiment.data.push("subid, counter, trialtype, percentage, sizeasked, searchtype, targetshape, targetcolor, targetsize, targetword, distractorshape1, distractorshape2, distractorsize, date, timestamp, rtsearch, rttest, targetpos, foilpos, attncheckscore");
 
 		// randomize order of trial types
 		experiment.trialtypes = shuffle(trialtypes);
-		var firsttrials = [1,2]
-		firsttrials = shuffle(firsttrials)
-		experiment.trialtypes.unshift(firsttrials[0],firsttrials[1])
 		experiment.shapes = shuffle(shapes);
 		experiment.colors = shuffle(colors);
 		experiment.words = shuffle(words);
