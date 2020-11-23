@@ -549,7 +549,7 @@ joint_data_subset <- joint_data %>%
 
 
 ```{r e3-read-data}
-e3_data <- read_csv(here("data/exp2_turk_data.csv"))
+e3_data <- read_csv(here("data/exp3_turk_data.csv"))
 
 e3_keep_subjs <- e3_data %>%
   filter(searchtype == "colorcheck", chosetarget == TRUE, attncheckscore >= 6) %>%
@@ -566,7 +566,7 @@ e3_subj_data <- e3_data %>%
   filter(trialtype != 0) %>%
   mutate(searchtype = if_else(searchtype == "differentshapes",
                                       "different", searchtype)) %>%
-  mutate(rtsearch = rtsearch - 6500) %>%
+  mutate(rtsearch = rtsearch - 6500) %>% # time before selections can be made
   mutate(log_rt = log(rtsearch)) %>%
   mutate(adjective = if_else(utttype == "adj", "adjective noun", utttype),
          adjective = if_else(adjective == "noutt", "alien utterance", adjective),
