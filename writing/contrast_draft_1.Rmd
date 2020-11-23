@@ -532,15 +532,9 @@ ggplot(joint_data, aes(x = p, y = chosen)) +
   scale_x_continuous(limits = c(0, 1)) +
   labs(y = "object chosen", x = "proportion of tomas that are blue")
 
-joint_data_p <- joint_data %>%
-  ungroup() %>%
-  filter(utterance %in% c("toma", "blue toma"), chosen == "blue pair") %>%
-  select(-world, -Iteration, -Chain) %>%
-  mutate(type = "contrast")
-
 
 joint_data_subset <- joint_data %>%
-  filter(!utterance %in% c("red dax"), !chosen == "red pair") %>%
+  filter(!utterance %in% c("red dax"), chosen == "blue pair") %>%
   group_by(utterance, chosen) %>%
   summarise(p = mean(p)) %>%
   spread(utterance, p)
