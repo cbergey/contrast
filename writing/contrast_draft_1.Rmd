@@ -114,7 +114,7 @@ In order to determine whether adults can use prenominal adjective contrast to di
 
 # Experiment 1   
 
-In Experiment 1, we test whether adult participants use prenominal adjective contrast to choose a novel referent. To examine whether contrast occurs across adjective types, we test participants in two conditions: color contrast and size contrast. In a task similar to that of Sedivy and colleagues (1999), we present participants with arrays of novel fruit objects. On critical trials, participants see a target object, a lure object that shares the target’s contrast feature but not its shape, and a contrastive pair that shares the target’s shape but not its contrast feature. Participants hear an utterance denoting the feature: "Find the [blue/big] dax." For the target object, use of the adjective is necessary to disambiguate from the same-shape distractor; for the lure, the adjective would be superfluous description. If participants use contrastive inference to choose novel referents, they should choose the target object more often than the lure. However, we do not expect listeners to treat color and size equally. Because color is often used redundantly in English while size is not [@pechmann_incremental_1989; @nadig_evidence_2002], we expect size to hold more contrastive weight, encouraging a more consistent contrastive inference. **cite rubio fernandez**
+In Experiment 1, we test whether adult participants use prenominal adjective contrast to choose a novel referent. To examine whether contrast occurs across adjective types, we test participants in two conditions: color contrast and size contrast. In a task similar to that of @sedivy_achieving_1999, we present participants with arrays of novel fruit objects. On critical trials, participants see a target object, a lure object that shares the target’s contrast feature but not its shape, and a contrastive pair that shares the target’s shape but not its contrast feature. Participants hear an utterance denoting the feature: "Find the [blue/big] dax." For the target object, use of the adjective is necessary to disambiguate from the same-shape distractor; for the lure, the adjective would be superfluous description. If participants use contrastive inference to choose novel referents, they should choose the target object more often than the lure. However, we do not expect listeners to treat color and size equally. Because color is often used redundantly in English while size is not [@pechmann_incremental_1989; @nadig_evidence_2002], we expect size to hold more contrastive weight, encouraging a more consistent contrastive inference. **cite rubio fernandez**
 
 ```{r colortrial, fig.env = "figure", fig.pos = "H", fig.align='center', set.cap.width=T, num.cols.cap=1, fig.cap = "On the left: an example of a contrastive trial in which the critical feature is size. Here, the participant would hear the instruction ``Find the small dax.'' On the right: an example of a contrastive trial in which the critical feature is color. Here, the participant would hear the instruction ``Find the red dax.'' In both cases, the target is the top object."}
 img <- png::readPNG(here("writing/figs/sizecolorcontrast.png"))
@@ -125,24 +125,43 @@ grid::grid.raster(img)
 ## Method
 
 ```{r load-data}
-e1_data <- read_csv(here("data/exp1_turk_data.csv")) 
+e1_raw_data <- read_csv(here("data/exp1_turk_data.csv")) 
 
-e1_keep_subjs <- e1_data %>%
+e1_total_subjs <- e1_raw_data %>%
+  distinct(subid) %>%
+  count() %>%
+  pull()
+
+e1_total_color_subjs <- e1_raw_data %>%
+  filter(condition == "color") %>%
+  distinct(subid) %>%
+  count() %>%
+  pull()
+
+e1_total_size_subjs <- e1_raw_data %>%
+  filter(condition == "size") %>%
+  distinct(subid) %>%
+  count() %>%
+  pull()
+
+
+e1_keep_subjs <- e1_raw_data %>%
   filter(searchtype == "colorcheck", chosetarget == TRUE, 
          attncheckscore >= 6) %>%
-  group_by(subid) %>%
-  count() %>%
-  filter(n == 4)
+  count(subid) %>%
+  filter(n == 4) %>%
+  pull(subid)
 
-e1_data_no_gather <- e1_data %>%
-  filter(subid %in% e1_keep_subjs$subid,
+e1_data_no_gather <- e1_raw_data %>%
+  filter(subid %in% e1_keep_subjs,
          trialtype != 0) %>%
   mutate(subid = as.factor(subid))
 
-e1_data <- e1_data %>%
-  filter(subid %in% e1_keep_subjs$subid,
+e1_data <- e1_raw_data %>%
+  filter(subid %in% e1_keep_subjs,
          trialtype != 0) %>%
-  gather(item, chose, chosetarget, choselure, choseunique) %>%
+  pivot_longer(cols = c(chosetarget, choselure, choseunique), 
+               names_to = "item", values_to = "chose") %>%
   mutate(item = gsub("chose", "", item),
          subid = as.factor(subid))
 
@@ -159,7 +178,7 @@ e1_size_subjs <- e1_data %>%
 e1_mean_data <- e1_data %>%
   filter(item != "unique") %>%
   group_by(condition, searchtype, adj, item, subid) %>%
-  summarise(chose = mean(chose), n = n()) %>%
+  summarise(chose = mean(chose)) %>%
   tidyboot_mean(chose) %>%
   ungroup() %>%
   mutate(adjective_used = factor(adj, labels = c("noun", "adjective noun"))) 
@@ -169,15 +188,14 @@ e1_mean_data <- e1_data %>%
 
 ### Participants.
 
-300 participants were recruited from Amazon Mechanical Turk.  participants were assigned to a condition in which the critical feature was color (stimuli contrasted on color), and  participants were assigned to a condition in which the critical feature was size.
-
+We recruited `r e1_total_subjs` participants through Amazon Mechanical Turk. Half of the participants (`r e1_color_subjs`) were assigned to a condition in which the critical feature was color (stimuli contrasted on color), and the other half (`r e1_size_subjs`) were assigned to a condition in which the critical feature was size. Each participant gave informed consent and was paid $DOLLARS in exchange for their participation.
+  
 
 ### Stimuli.
 
 Stimulus displays were arrays of three novel fruit objects. Fruits were chosen randomly at each trial from 25 fruit kinds. Ten of the 25 fruit drawings were adapted and redrawn from @kanwisher; we designed the remaining 15 fruit kinds. Each fruit kind has an instance in each of four colors (red, blue, green, or purple) and two sizes (big or small). Particular colors and sizes were assigned randomly at each trial. **true of sizes?** There were two display types: unique target displays and contrastive displays. Unique target displays contain a target object that has a unique shape and is unique on the trial's critical feature (color or size), and two distractor objects that match each other's (but not the target's) shape and critical feature. Contrastive displays contain a target, its contrastive pair (matches the target's shape but not critical feature), and a lure (matches the target’s critical feature but not shape). The positions of the target and distractor items were randomized within a triad configuration.
 
 ```{r e1-fig, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", set.cap.width=T, num.cols.cap=2, fig.cap = "Proportion of times that participants chose the target and lure items as a function of condition and whether an adjective was provided. Points indicate group means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping."}
-
 condition_names <- c(
                     "contrast" = "contrastive display",
                     "uniquetarget" = "unique target display",
@@ -211,7 +229,6 @@ chance_comparisons <- e1_data %>%
   filter(searchtype == "uniquetarget", item == "target") %>% 
   group_by(adj, condition, subid)
 
-
 glmer_chance_comparison <- chance_comparisons %>%
   filter(!adj) %>%
   group_by(condition) %>%
@@ -221,24 +238,35 @@ glmer_chance_comparison <- chance_comparisons %>%
                                   family = "binomial", data = .))) %>%
   mutate(model = map(model, tidy)) %>%
   select(-data) %>%
-  unnest() %>%
-  filter(effect == "fixed")
+  unnest(cols = c(model)) %>%
+  filter(effect == "fixed") %>%
+  select(-term) %>%
+  rename(term = condition) %>%
+  mutate(p.value = printp(p.value))
 
-make_text_vars(glmer_chance_comparison, "condition")
+
+walk2(c("e1_color_chance", "e1_size_chance"), c("color", "size"), 
+      ~ make_text_vars(glmer_chance_comparison, .x, .y))
+
 
 glmer_unique <- chance_comparisons %>%
   glmer(chose ~ condition * adj + (1|subid), family = "binomial", data = .) %>%
   tidy() %>%
   filter(effect == "fixed")
+
+walk2(c("e1_target_size", "e1_target_adj", "e1_target_size_adj"), 
+      c("conditionsize", "adjTRUE", "conditionsize:adjTRUE"), 
+      ~ make_text_vars(glmer_unique, .x, .y))
 ```
 
-We first confirmed that participants understood the task by analyzing performance on trials in which there was a target unique on both shape and the relevant adjective. We asked whether participants chose the target more often than expected by chance ($33\%$) by fitting a mixed effects logistic regression with an intercept term, a random effect of subject, and an offset of $logit(1/3)$ to set chance probability to the correct level. The intercept term was reliably different from zero for both color ($\beta =$ , $t =$ , $p$ ) and size ($\beta =$ , $t =$ , $p$ ). In addition, participants were more likely to select the target when an adjective was provided in the audio instruction in both conditions. We confirmed this effect statistically by fitting a mixed effects logistic regression predicting target selection from condition, adjective use, and their interaction with random effects of participants. Adjective type (color vs. size) was not statistically related to target choice ($\beta =$ , $p =$ ), and adjective description in the audio increased target choice ($\beta =$ , $t =$ , $p$ ). The two effects did not interact ($\beta =$ , $t =$ , $p =$ ). Participants had a general tendency to choose the target in unique target trials, which was amplified if the audio instruction contained the relevant contrast adjective.
+We first confirmed that participants understood the task by analyzing performance on trials in which there was a target unique on both shape and the relevant adjective. We asked whether participants chose the target more often than expected by chance ($33\%$) by fitting a mixed effects logistic regression with an intercept term, a random effect of subject, and an offset of $logit(1/3)$ to set chance probability to the correct level. The intercept term was reliably different from zero for both color ($\beta =$ `r e1_color_chance_estimate` , $t =$ `e1_color_chance_statistic`, $p$ `r e1_color_chance_p.value`) and size ($\beta =$ `r e1_size_chance_estimate` , $t =$ `e1_size_chance_statistic`, $p$ `r e1_size_chance_p.value`). In addition, participants were more likely to select the target when an adjective was provided in the audio instruction in both conditions. We confirmed this effect statistically by fitting a mixed effects logistic regression predicting target selection from condition, adjective use, and their interaction with random effects of participants. Adjective type (color vs. size) was not statistically related to target choice ($\beta =$ `r e1_target_size_estimate`, $t =$, `r `e1_target_size_statistic`, $p =$ `r e1_target_size_p.value`), and adjective description in the audio increased target choice ($\beta =$ `r e1_target_adj_estimate`, $t =$ `r e1_target_adj_statistic`, $p$ `r e1_target_adj_p.value`). The two effects did not interact ($\beta =$ `r e1_target_size_adj_estimate`, $t =$ `e1_target_size_adj_statistic`, $p =$ `e1_target_size_adj_p.value`). Participants had a general tendency to choose the target in unique target trials, which was amplified if the audio instruction contained the relevant contrast adjective.
 
 ```{r e1-models-contrast}
 # in contrast trials w/an adjective, do people choose the target over the lure?
 # prereg'd
 chance_model <- e1_data_no_gather %>%
-  filter(searchtype == "contrast", adj == TRUE, (chosetarget == TRUE || choselure == TRUE)) %>%
+  filter(searchtype == "contrast", adj == TRUE, 
+         (chosetarget == TRUE || choselure == TRUE)) %>%
   glmer(chosetarget ~ 1 + (1 | subid),
         family = "binomial", data = .) %>%
   tidy() %>%
@@ -260,7 +288,8 @@ color_model <- e1_data_no_gather %>%
 # does the type of adjective matter in choosing target over lure?
 # prereg'd
 adj_type_model <- e1_data_no_gather %>%
-  filter(searchtype == "contrast", adj == TRUE, (chosetarget == TRUE | choselure == TRUE)) %>%
+  filter(searchtype == "contrast", adj == TRUE, 
+         (chosetarget == TRUE | choselure == TRUE)) %>%
   glmer(chosetarget ~ condition + (1 | subid),
         family = "binomial", data = .) %>%
   tidy() %>%
@@ -272,7 +301,8 @@ adj_type_model <- e1_data_no_gather %>%
 # in determining target over lure choice?
 # not prereg'd
 adj_by_adjtype_model <- e1_data_no_gather %>%
-  filter(searchtype == "contrast", (chosetarget == TRUE | choselure == TRUE)) %>%
+  filter(searchtype == "contrast",
+         (chosetarget == TRUE | choselure == TRUE)) %>%
   glmer(chosetarget ~ condition * adj + (1 | subid),
         family = "binomial", data = .) %>%
   tidy() %>%
