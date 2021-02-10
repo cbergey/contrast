@@ -188,7 +188,7 @@ e1_mean_data <- e1_data %>%
 
 ### Participants.
 
-We recruited `r e1_total_subjs` participants through Amazon Mechanical Turk. Half of the participants (`r e1_color_subjs`) were assigned to a condition in which the critical feature was color (stimuli contrasted on color), and the other half (`r e1_size_subjs`) were assigned to a condition in which the critical feature was size. Each participant gave informed consent and was paid $DOLLARS in exchange for their participation.
+We recruited `r e1_total_subjs` participants through Amazon Mechanical Turk. Half of the participants (`r e1_color_subjs`) were assigned to a condition in which the critical feature was color (stimuli contrasted on color), and the other half (`r e1_size_subjs`) were assigned to a condition in which the critical feature was size. Each participant gave informed consent and was paid $0.30 in exchange for their participation.
   
 
 ### Stimuli.
@@ -215,6 +215,18 @@ e1_mean_data %>%
   xlab("") + 
   geom_dl(method = list(dl.trans(x=x - .5), "first.qp", cex=.7)) +
   theme(legend.position = "none")
+
+# e1_mean_data %>%
+#   filter(searchtype == "contrast") %>%
+#   ggplot(aes(x = adjective_used, color = item, label = item, y = empirical_stat)) +
+#   facet_wrap(~condition, labeller = as_labeller(condition_names)) + 
+#   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper),
+#                   position = position_dodge(.25)) + 
+#   scale_color_ptol() + 
+#   ylab("Item chosen") + 
+#   xlab("") + 
+#   geom_dl(method = list(dl.trans(x=x - .5), "first.qp", cex=.7)) +
+#   theme(legend.position = "none", text = element_text(size=15))
 ```
 
 ### Design and Procedure.
@@ -260,7 +272,7 @@ walk2(c("e1_target_size", "e1_target_adj", "e1_target_size_adj"),
 ```
 
 
-We first confirmed that participants understood the task by analyzing performance on trials in which there was a target unique on both shape and the relevant adjective. We asked whether participants chose the target more often than expected by chance ($33\%$) by fitting a mixed effects logistic regression with an intercept term, a random effect of subject, and an offset of $logit(1/3)$ to set chance probability to the correct level. The intercept term was reliably different from zero for both color ($\beta =$ `r e1_color_chance_estimate` , $t =$ `e1_color_chance_statistic`, $p$ `r e1_color_chance_p.value`) and size ($\beta =$ `r e1_size_chance_estimate` , $t =$ `e1_size_chance_statistic`, $p$ `r e1_size_chance_p.value`). In addition, participants were more likely to select the target when an adjective was provided in the audio instruction in both conditions. We confirmed this effect statistically by fitting a mixed effects logistic regression predicting target selection from condition, adjective use, and their interaction with random effects of participants. Adjective type (color vs. size) was not statistically related to target choice ($\beta =$ `r e1_target_size_estimate`, $t =$, `r `e1_target_size_statistic`, $p =$ `r e1_target_size_p.value`), and adjective description in the audio increased target choice ($\beta =$ `r e1_target_adj_estimate`, $t =$ `r e1_target_adj_statistic`, $p$ `r e1_target_adj_p.value`). The two effects did not interact ($\beta =$ `r e1_target_size_adj_estimate`, $t =$ `e1_target_size_adj_statistic`, $p =$ `e1_target_size_adj_p.value`). Participants had a general tendency to choose the target in unique target trials, which was strengthened if the audio instruction contained the relevant contrast adjective.
+We first confirmed that participants understood the task by analyzing performance on trials in which there was a target unique on both shape and the relevant adjective. We asked whether participants chose the target more often than expected by chance ($33\%$) by fitting a mixed effects logistic regression with an intercept term, a random effect of subject, and an offset of $logit(1/3)$ to set chance probability to the correct level. The intercept term was reliably different from zero for both color ($\beta =$ `r e1_color_chance_estimate` , $t =$ `r e1_color_chance_statistic`, $p$ `r e1_color_chance_p.value`) and size ($\beta =$ `r e1_size_chance_estimate` , $t =$ `r e1_size_chance_statistic`, $p$ `r e1_size_chance_p.value`). In addition, participants were more likely to select the target when an adjective was provided in the audio instruction in both conditions. We confirmed this effect statistically by fitting a mixed effects logistic regression predicting target selection from condition, adjective use, and their interaction with random effects of participants. Adjective type (color vs. size) was not statistically related to target choice ($\beta =$ `r e1_target_size_estimate`, $t =$, `r e1_target_size_statistic`, $p =$ `r e1_target_size_p.value`), and adjective description in the audio increased target choice ($\beta =$ `r e1_target_adj_estimate`, $t =$ `r e1_target_adj_statistic`, $p$ `r e1_target_adj_p.value`). The two effects did not interact ($\beta =$ `r e1_target_size_adj_estimate`, $t =$ `r e1_target_size_adj_statistic`, $p$ `r e1_target_size_adj_p.value`). Participants had a general tendency to choose the target in unique target trials, which was strengthened if the audio instruction contained the relevant contrast adjective.
 
 ```{r e1-models-contrast}
 # in contrast trials w/an adjective, do people choose the target over the lure?
@@ -270,8 +282,7 @@ chance_model <- e1_data_no_gather %>%
          (chosetarget == TRUE || choselure == TRUE)) %>%
   glmer(chosetarget ~ 1 + (1 | subid),
         family = "binomial", data = .) %>%
-  tidy() %>%
-  filter(group == "fixed")
+  tidy() 
 
 
 # in only *color* contrast trials w/an adjective, do people choose the target over the lure?
@@ -281,9 +292,21 @@ color_model <- e1_data_no_gather %>%
          (chosetarget == TRUE || choselure == TRUE)) %>%
   glmer(chosetarget ~ 1 + (1 | subid),
         family = "binomial", data = .) %>%
-  tidy() %>%
-  filter(group == "fixed")
+  tidy() 
 
+size_model <- e1_data_no_gather %>%
+  filter(searchtype == "contrast", adj == TRUE, condition == "size",
+         (chosetarget == TRUE || choselure == TRUE)) %>%
+  glmer(chosetarget ~ 1 + (1 | subid),
+        family = "binomial", data = .) %>%
+  tidy() 
+
+no_adj_model <- e1_data_no_gather %>%
+  filter(searchtype == "contrast", adj == FALSE, 
+         (chosetarget == TRUE || choselure == TRUE)) %>%
+  glmer(chosetarget ~ 1 + (1 | subid),
+        family = "binomial", data = .) %>%
+  tidy() 
 
 # in contrast trials w/an adjective, 
 # does the type of adjective matter in choosing target over lure?
@@ -306,8 +329,7 @@ adj_by_adjtype_model <- e1_data_no_gather %>%
          (chosetarget == TRUE | choselure == TRUE)) %>%
   glmer(chosetarget ~ condition * adj + (1 | subid),
         family = "binomial", data = .) %>%
-  tidy() %>%
-  filter(group == "fixed")
+  tidy() 
 
 
 # throw everything in the model
@@ -478,8 +500,12 @@ Description is often used not to distinguish among present objects, but to pick 
 
 To allow the Rational Speech Act Framework to capture inferences about typicality, we modified the Speaker's utility function to have an additional term: the listener's expected processing difficulty. Speakers may be motivated to help listeners to select the correct referent not just eventually but as quickly as possible. People are both slower and less accurate at identifying atypical members of a category as members of that category [@rosch_structural_1976, @dale_graded_2007]. If speakers account for listeners' processing difficulties, they should be unlikely to produce bare nouns to refer to low typicality exemplars (e.g. unlikely to call a yellow tomato "tomato"). This is roughly the kind of inference encoded in @degen2020's continuous semantics Rational Speech Act model. 
 
-We model the speaker as reasoning about the listener's label verification process. Because the speed of verification scales with the typicality of a referent, a natural way of modeling it is as process of searching for that particular referent in the set of all exemplars of the named category, or alternatively of sampling that particular referent from the set of all exemplars in that category $P\left(r \vert Cat\right)$. On this account, speakers want to provide a modifying adjective for atypical referents because the probability of sampling them from their category is low, but the probability of sampling of them from the modified category is much higher (e.g. $P\left(\text{yellow tomato_i} \vert \text{tomatoes}\right) < P\left(\text{yellow tomato_i} \vert \text{yellow tomatoes}\right)$^{This is a generaliztaion of @xu2007's size principle to categories where exemplars are not equally likely}.
- 
+We model the speaker as reasoning about the listener's label verification process. Because the speed of verification scales with the typicality of a referent, a natural way of modeling it is as process of searching for that particular referent in the set of all exemplars of the named category, or alternatively of sampling that particular referent from the set of all exemplars in that category $P\left(r \vert Cat\right)$. On this account, speakers want to provide a modifying adjective for atypical referents because the probability of sampling them from their category is low, but the probability of sampling of them from the modified category is much higher 
+```{r}
+# doesn't knit
+# (e.g., $P\left(\text{yellow_tomato_i} \vert \text{tomatoes}\right)$ <
+# $P\left(\text{yellow_tomato_i} \vert \text{yellow_tomatoes}\right)$ [This is a generaliztaion of @xu2007's size principle to categories where exemplars are not equally likely.]
+```
 If speakers use this utility function, learners who do not know the feature distribution for a category can use speakers' production to infer it. Intuitively, speakers should prefer not to modify nouns with adjectives because they incur a cost for producing that adjective. If they did, it must be because they thought the learner would have a difficult time finding the referent from a bare noun alone because of typicality. To infer the true prevalence of the target feature in the category, learners combine the speaker's utterance with their prior beliefs about the prevalence distribution. We model the listener's prior about the prevalance of features in any category as a $\text{Beta}$ distribution with two parameters $\alpha$ and $\beta$ that encode the number of hypothesized prior psuedo-exemplars with the feature and without feature that the learner has previously observed (e.g. one red dax and one blue dax). We assume that the learner believes they have previously observed 1 hypothetical psuedo-examplar of each type, which is a weak symmetric prior indicating that the learner expects features to occur in half of all members of a category on average, but would find many levels of prevalence reasonably unsurprising. To model the learner's direct experience with the category, we add the observed instances in the experiment to these hypothesized prior instance. After observing one memember of the target category with the relevant feature and one without, the listeners prior is thus updated to be $\text{Beta}\left(2,\,2\right)$.
 
 ```{r e2-webppl-markedness}
