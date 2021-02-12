@@ -415,18 +415,42 @@ e1_estimation_data <- e1_data_no_gather %>%
   filter(searchtype == "contrast") %>%
   mutate(choseother = !chosetarget & !choselure) %>%
   select(condition, adj, chosetarget, choselure, choseother) %>%
-  group_by(condition, adj) %>%
-  summarise_at(c("chosetarget", "choselure", "choseother"), sum) %>%
   mutate(utt = if_else(adj, "blue dax", "dax")) %>%
-  select(-adj)
+  mutate(world = case_when(chosetarget & adj ~ "two dax",
+                         chosetarget & !adj ~ "two toma",
+                         choselure & adj ~ "two toma",
+                         choselure & !adj ~ "two dax",
+                         TRUE ~ NA_character_),
+         obj = case_when(chosetarget & adj ~ "blue dax",
+                         chosetarget & !adj ~ "blue dax",
+                         choselure & adj ~ "blue dax",
+                         choselure & !adj ~ "blue dax",
+                         TRUE ~ NA_character_)) %>%
+  filter(!is.na(world), !is.na(obj))
 
-  select(condition, adj, item, chose_n)
+
+tmp <- e1_estimation_data %>%
+  filter(condition == "color")
 
 
-size_parameter <- webppl(program_file = "webppl/infer_descrete_semantics", 
-                          data = mean_data, 
+size_parameter <- webppl(program_file = "webppl/infer_discrete_semantics.wppl", 
+                          data = tmp, 
                           data_var = "empiricalData") 
 
+
+size_parameter %>%
+  as_tibble() %>%
+  ggplot(aes(x = value)) +
+  geom_histogram() 
+  
+size_parameter %>% 
+  pivot_wider(names_from = "Parameter", values_from = "value") %>%
+  filter(score == max(score)) 
+    
+
+
+  group_by(Parameter) %>%
+  summarise(value = mean(value))
 
 ```
 
@@ -439,7 +463,8 @@ ggplot(e1_webppl_data, aes(x = utterance, color = item, fill = item)) +
                 position = position_dodge(.5), width = .5,
            alpha = .5, size = .5) + 
   facet_wrap(~ condition) + 
-  labs(x = "", y = "item chosen")
+  labs(x = "", y = "item chosen") +
+  theme(legend.position = "right")
 ```
 
 Because the model we described has no way of distinguishing between color and size adjectives, making the same predictions for both. Based on our pilot studies, we pre-registered and observed an asymmetry in which contrastive inferences would be stronger for size than color. Why do we see an asymmetry in people? One possibility is that the semantics of color and size work differently. A recent model from @degen_when_2020 does predict a color--size asymmetry based on different semantic exactness. In this model, literal semantics are treated as continuous rather than discrete, so "blue" is neither 100% true or 100% false of a particular object, but can instead be 90% true. They successfully model a number of color--size asymmetries by treating color as having stronger literal semantics (i.e. "blue dax" is a better description of a small blue dax than "small dax" is). However, this model predicts the opposite asymmetry of what we found. Because color has stronger semantics than size, listeners show a stronger contrast effect for color than size. We show this effect in appendix A. Thus, though a continuous semantics can explain our asymmetry, this explanation is unlikely given the continuous semantics that predicts other empirical color--size asymmetries does not predict our findings.

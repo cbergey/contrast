@@ -75,5 +75,5 @@ var pragmaticListener = function(utterance){
 
 
 // define actor optimality
-var alpha = 3
+var alpha = .2
 pragmaticListener(_.first(data))

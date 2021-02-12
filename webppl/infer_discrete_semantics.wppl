@@ -63,39 +63,36 @@ var speaker = function(world, obj, alpha){
 }
 
 // pragmatic listener
-var pragmaticListener = function(alpha_size, alpha_color, x){
+var pragmaticListener = function(alpha, utterance){
   Infer({model: function(){
-    var alpha = x.type == "size" ? x.alpha_size : alpha_color
     var world = worldsPrior()
     var obj = objectPrior(world.objects)
-    observe(speaker(world, obj, x.alpha), x.utterance)
+    observe(speaker(world, obj, alpha), utterance)
     var world_string = world.string
     return{obj, world_string}
   }})
 }
 
-alphaPrior = Gamma({shape: 1, scale: 1})
+var alphaPrior = Gamma({shape: 1, scale: 1})
 
 var modelPosterior = function() {
-  Infer({method: "MCMC", samples: 10000, burn: 2000, verbose: true,
+  Infer({method: "MCMC", samples: 1000, burn: 200, verbose: true,
     model() {
-      var alpha_color = sample(alphaPrior)//, {driftKernel: gaussianKernel})
-      var alpha_size = sample(alphaPrior) //, {driftKernel: gaussianKernel})
-      //for everyone
+      var alpha = sample(alphaPrior)
 
-      var newScore = map(function(x) {pragmaticListener(alpha_color, alpha_size, x)}, empiricalData)
+      var posterior_dax = pragmaticListener(alpha, "dax")
+      var posterior_blue_dax = pragmaticListener(alpha, "blue dax")
+
+      var newScore = map(function(x) {x.utt == "dax" ?
+          posterior_dax.score({"obj": x.obj, "world_string": x.world}) :
+          posterior_blue_dax.score({"obj": x.obj, "world_string": x.world})},
+      empiricalData)
+
       factor(_.sum(newScore))
 
-      return {alpha_color: alpha_color, alpha_size: alpha_size}
+      return alpha
     }
   })
 }
 
 modelPosterior()
-
-
-
-
-// define actor optimality
-var alpha = 3
-pragmaticListener(_.first(data))
