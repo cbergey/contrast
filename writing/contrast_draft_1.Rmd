@@ -285,6 +285,7 @@ chance_model <- e1_data_no_gather %>%
   glmer(chosetarget ~ 1 + (1 | subid),
         family = "binomial", data = .) %>%
   tidy() %>%
+  filter(effect == "fixed") %>%
   mutate(p.value = printp(p.value))
 
 
@@ -296,6 +297,7 @@ color_model <- e1_data_no_gather %>%
   glmer(chosetarget ~ 1 + (1 | subid),
         family = "binomial", data = .) %>%
   tidy() %>%
+  filter(effect == "fixed") %>%
   mutate(p.value = printp(p.value))
 
 size_model <- e1_data_no_gather %>%
@@ -303,14 +305,17 @@ size_model <- e1_data_no_gather %>%
          (chosetarget == TRUE || choselure == TRUE)) %>%
   glmer(chosetarget ~ 1 + (1 | subid),
         family = "binomial", data = .) %>%
-  tidy() 
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
 
 no_adj_model <- e1_data_no_gather %>%
   filter(searchtype == "contrast", adj == FALSE, 
          (chosetarget == TRUE || choselure == TRUE)) %>%
   glmer(chosetarget ~ 1 + (1 | subid),
         family = "binomial", data = .) %>%
-  tidy() 
+  tidy()  %>%
+  filter(effect == "fixed") 
 
 # in contrast trials w/an adjective, 
 # does the type of adjective matter in choosing target over lure?
@@ -334,7 +339,8 @@ adj_by_adjtype_model <- e1_data_no_gather %>%
          (chosetarget == TRUE | choselure == TRUE)) %>%
   glmer(chosetarget ~ condition * adj + (1 | subid),
         family = "binomial", data = .) %>%
-  tidy() 
+  tidy() %>%
+  filter(effect == "fixed") %>%
   mutate(p.value = printp(p.value))
 
 
@@ -435,7 +441,8 @@ e2_size_data <- read_csv(here("data/exp2/size.csv")) %>%
   mutate(condition = "size") %>%
   rename(adj = sizeasked, distractorfeature = distractorsize)
 
-e2_data <- rbind(e2_color_data, e2_size_data)
+e2_data <- rbind(e2_color_data, e2_size_data) %>%
+  mutate(subid = paste0(subid, condition))
 
 e2_keep_subjs <- e2_data %>%
   filter(searchtype == "attncheck", attncheckscore >= 6) %>%
@@ -469,6 +476,24 @@ e2_mean_data <- e2_subj_data %>%
 ggplot(e2_subj_data, aes(x = adjective, y = percentage)) + 
   facet_grid(condition ~ searchtype) + 
   geom_boxplot()
+
+ggplot(e2_mean_data,
+       aes(x = adjective, color = condition, group = condition)) + 
+  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
+                      position = position_dodge(.5)) +
+  facet_wrap(~searchtype) +
+  ylab("Prevalence judgment") +
+  xlab("Context type") +
+  labs(color = "adj") + 
+  theme(text = element_text(size=20)) +
+  scale_color_ptol()
+
+e2_model <- lmer(percentage ~ condition * adjective * searchtype +
+                (adjective | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = e2_subj_data) %>%
+  tidy() %>%
+  filter(effect == "fixed")
 ```
 
 In our first experiment, we examined whether adult listeners would interpret description as implying contrast with other present objects. However, as discussed earlier, description can imply contrast with sets other than the set of currently available referents. One of these alternative sets is the referent's category. Work by @mitchell_2013 and @westerbeek_2015 demonstrates that speakers use more description when referring to objects with atypical features (e.g., a yellow tomato) than typical ones (e.g., a red tomato). This marking of atypical objects potentially supplies useful information to listeners: they have the opportunity to not only learn about the object at hand, but also about its broader category. In the following experiment, we test whether listeners use this type of contrast to learn about unfamiliar objects' categories. 
@@ -729,6 +754,13 @@ e3_subj_data <- e3_data %>%
 e3_mean_data <- e3_subj_data %>%
   group_by(searchtype, adjective, condition) %>%
   tidyboot_mean(percentage)
+
+e3_model <- lmer(percentage ~ condition * adjective * searchtype +
+                (adjective | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = e3_subj_data) %>%
+  tidy() %>%
+  filter(effect == "fixed")
 ```
 
 # Experiment 3
