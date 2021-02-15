@@ -416,21 +416,23 @@ e1_estimation_data <- e1_data_no_gather %>%
   mutate(choseother = !chosetarget & !choselure) %>%
   select(condition, adj, chosetarget, choselure, choseother) %>%
   mutate(utt = if_else(adj, "blue dax", "dax")) %>%
-  mutate(world = case_when(chosetarget & adj ~ "two dax",
-                         chosetarget & !adj ~ "two toma",
-                         choselure & adj ~ "two toma",
-                         choselure & !adj ~ "two dax",
+  mutate(world = case_when(chosetarget ~ "two dax",
+                         choselure ~ "two toma",
+                         choseother ~ "two dax",
                          TRUE ~ NA_character_),
-         obj = case_when(chosetarget & adj ~ "blue dax",
-                         chosetarget & !adj ~ "blue dax",
-                         choselure & adj ~ "blue dax",
-                         choselure & !adj ~ "blue dax",
+         obj = case_when(choseother ~ "red dax",
+                         chosetarget | choselure ~ "blue dax",
                          TRUE ~ NA_character_)) %>%
   filter(!is.na(world), !is.na(obj))
 
+e1_estimation_data %>%
+  group_by(utt, world, obj) %>%
+  count()
+
 
 tmp <- e1_estimation_data %>%
-  filter(condition == "color")
+  filter(obj != "red dax") %>%
+  filter(condition == "size")
 
 
 size_parameter <- webppl(program_file = "webppl/infer_discrete_semantics.wppl", 
