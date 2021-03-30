@@ -11,16 +11,8 @@ var objects2 = [{color: "blue", shape: "dax", string: "blue dax"},
 var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma"]
 var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
 
-var worlds = [{objects: objects1, utterances: utterances1,
-               ps: [11, 66, 23], string: "two toma"},
-              {objects: objects2, utterances: utterances2,
-               ps: [11, 66, 23], string: "two dax"}]
-
-
-// var worlds = [{objects: objects1, utterances: utterances1,
-//               ps: [10, 77, 13], string: "two toma"},
-//              {objects: objects2, utterances: utterances2,
-//               ps: [10, 77, 13], string: "two dax"}]
+var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
+              {objects: objects2, utterances: utterances2, string: "two dax"}]
 
 
 // prior over world states
@@ -30,9 +22,8 @@ var worldsPrior = function() {
 }
 
 // prior over object states
-var objectPrior = function(objects, priors) {
-  //var obj = uniformDraw(objects)
-  var obj = sample(Categorical({ps: priors, vs: objects}))
+var objectPrior = function(objects) {
+  var obj = uniformDraw(objects)
   return obj.string
 }
 
@@ -44,7 +35,7 @@ var meaning = function(utterance, obj){
 // literal listener
 var literalListener = function(world, utterance){
   Infer({model: function(){
-    var obj = objectPrior(world.objects, world.ps);
+    var obj = objectPrior(world.objects);
     condition(meaning(utterance, obj))
     return obj
   }})
@@ -63,7 +54,7 @@ var cost = function(utterance) {
 }
 
 // pragmatic speaker
-var speaker = function(world, obj){
+var speaker = function(world, obj, alpha){
   Infer({model: function(){
     var utterance = uniformDraw(world.utterances)
     factor(alpha * (literalListener(world, utterance).score(obj) - cost(utterance)))
@@ -72,17 +63,36 @@ var speaker = function(world, obj){
 }
 
 // pragmatic listener
-var pragmaticListener = function(utterance){
+var pragmaticListener = function(alpha, utterance){
   Infer({model: function(){
     var world = worldsPrior()
-    var obj = objectPrior(world.objects, world.ps)
-    observe(speaker(world, obj),utterance)
+    var obj = objectPrior(world.objects)
+    observe(speaker(world, obj, alpha), utterance)
     var world_string = world.string
     return{obj, world_string}
   }})
 }
 
+var alphaPrior = Gamma({shape: 1, scale: 1})
 
-// define actor optimality
-var alpha = 7
-pragmaticListener(_.first(data))
+var modelPosterior = function() {
+  Infer({method: "MCMC", samples: 5000, burn: 2000, verbose: true,
+    model() {
+      var alpha = sample(alphaPrior)
+
+      var posterior_dax = pragmaticListener(alpha, "dax")
+      var posterior_blue_dax = pragmaticListener(alpha, "blue dax")
+
+      var newScore = map(function(x) {x.utt == "dax" ?
+          posterior_dax.score({"obj": x.obj, "world_string": x.world}) :
+          posterior_blue_dax.score({"obj": x.obj, "world_string": x.world})},
+      empiricalData)
+
+      factor(_.sum(newScore))
+
+      return alpha
+    }
+  })
+}
+
+modelPosterior()
