@@ -932,6 +932,19 @@ full_model <- e3_model_data %>%
 
 ```
 
+
+```{r e3-rsa}
+
+e3_null_inference <- webppl(program_file = 
+                                         here("webppl/e3_null.wppl"))
+
+e3_null_inference %>%
+  pivot_wider(values_from = "value", names_from = "Parameter") %>%
+  mutate(p = as.numeric(p)) %>%
+  group_by(obj) %>%
+  summarise(p = mean(p))
+```
+
 ```{r extra-models}
 no_baseline_model <- e3_model_data %>%
   filter(utttype != "noutt") %>%
