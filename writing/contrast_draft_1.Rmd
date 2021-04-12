@@ -74,10 +74,11 @@ library(lmerTest)
 library(knitr)
 library(rwebppl)
 library(ggridges)
-
-theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 logit <- function(x) {log(x/(1-x))}
+```
 
+```{r set-theme, cache = FALSE}
+theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 ```
 
 ```{r make-text-vars}
@@ -381,7 +382,7 @@ $$Listener: P_{Learn}\left(r \vert u\right) \propto P_s\left(u \vert r\right)P\l
 
 This computation naturally predicts a number of phenomena in pragmatics. For example, RSA explains scalar implicature--listeners treat "I ate some of the cookies" as a poor description of a case where the speaker at all of the cookies. The speaker's statement is literally true--the speaker eating some of the cookies is consistent with a world in which they ate all of them. However, this statement is ambiguous--it is true of both the world in which some cookies remain and the world in which there are no cookies left. Thus, if the speaker intends to convey that they ate all of the cookies, saying "I ate some of the cookies" will cause the literal listener to guess the wrong world half of the time. In contrast, the statement "I ate all of the cookies" is consistent only with world in which all of the cookies were eaten. Thus, if the speaker ate all of the cookies, this statement would accomplish their goal of communicating the state of the world more effectively. Scalar implicature arises from exactly this inference: If the speaker actually ate all of the cookies, they should have said "I ate all of the cookies" because that would be a more effective utterance than "I ate some of the cookies." Since they produced "some," it is more likely that they wanted to communicate about the world in which cookies remain [@frank2012]. 
 **do we need all of this RSA intro?**
-Extensions of this framework have successfully accounted for a variety of other pragmatic inferences, including  inference that speech is hyperbolic (e.g. waiting "a million years" means waiting a long time), inferring when speakers are being polite rather than truthful, and learning new words in ambiguous contexts [@goodman2016; @kao2014; @yoon2020; @frank2014]. Further, a recent extension of the framework using continuous rather than discrete semantics has given an account of the kinds of differences between color and size modification that we observed in our experimental data [@degen_when_2020]. 
+Extensions of this framework have successfully accounted for a variety of other pragmatic inferences, including  inference that speech is    hyperbolic (e.g. waiting "a million years" means waiting a long time), inferring when speakers are being polite rather than truthful, and learning new words in ambiguous contexts [@goodman2016; @kao2014; @yoon2020; @frank2014]. Further, a recent extension of the framework using continuous rather than discrete semantics has given an account of the kinds of differences between color and size modification that we observed in our experimental data [@degen_when_2020]. 
 
 For this experiment, we build on a Rational Speech Act model developed by @frank2014 to jointly resolve reference and learn new words. The primary extension of RSA is that the pragmatic learner is a pragmatic listener who has has uncertainty about the meanings of words in their language, and thus cannot directly compute the speaker's utility as written. Instead, the speaker's utility is conditioned on the set of mappings, and the learners must also infer which set of mappings is correct:  
 
@@ -698,8 +699,7 @@ e2_different_means <- e2_different_inference %>%
   mutate(searchtype = "different", condition = "color")
 ```
 
-```{r}
-
+```{r e2-wppl-plot}
 e2_wppl_data <- bind_rows(e2_contrast_means, e2_same_means, 
                           e2_different_means) %>%
   mutate(p = 100 * p) %>%
@@ -774,8 +774,10 @@ joint_data_subset <- joint_data %>%
 
 ## Discussion
 
+# Experiment 3
 
 ```{r e3-read-data}
+
 e3_data <- read_csv(here("data/exp3_turk_data.csv"))
 
 e3_keep_subjs <- e3_data %>%
@@ -813,7 +815,6 @@ e3_model <- lmer(percentage ~ condition * adjective * searchtype +
   filter(effect == "fixed")
 ```
 
-# Experiment 3
 
 In Experiments 1 and 2, we established that people can use contrastive inferences to resolve referential ambiguity and to make inferences about the feature distribution of a novel category. Additionally, in Experiment 2, we found that these two inferences do not seem to trade off substantially: even if an adjective is necessary to establish reference, people infer that it also marks atypicality. We also found that inferences of atypicality about color and size adjectives pattern very similarly, though their baseline typicality is shifted, while color and size are not equally contrastive with respect to referential disambiguation.
 
@@ -931,15 +932,21 @@ full_model <- e3_model_data %>%
 
 
 ```{r e3-rsa}
-
 e3_null_inference <- webppl(program_file = 
                                          here("webppl/e3_null.wppl"))
 
-e3_null_inference %>%
+e3_wppl_null_data <- e3_null_inference %>%
   pivot_wider(values_from = "value", names_from = "Parameter") %>%
   mutate(p = as.numeric(p)) %>%
   group_by(obj) %>%
-  summarise(p = mean(p))
+  summarise(p = 100 * mean(p)) %>%
+  filter(obj == "red toma") %>%
+  rename(empirical_stat = p) %>%
+  mutate(adjective = "alien utterance") %>%
+  select(-obj) %>%
+  expand_grid(condition = c("color", "size"),
+              searchtype = c("different", "contrast"))
+  
 ```
 
 ```{r extra-models}
@@ -961,6 +968,24 @@ size_only_model <- e3_model_data %>%
   filter(effect == "fixed") %>%
   select(-effect, -group) %>%
   mutate(p.value = papaja::printp(p.value))
+
+```
+
+
+```{r e3-wppl-plot}
+e3_wppl_data <- e2_wppl_data %>%
+  bind_rows(e3_wppl_null_data) %>%
+  filter(searchtype != "same")
+
+ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat, 
+                         color = searchtype, fill = searchtype)) + 
+  facet_wrap(~ condition) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
+                  position = position_dodge(.5)) + 
+  theme(legend.position = "top") + 
+  geom_col(data = e3_wppl_data, width = .5, 
+           position = position_dodge(.5), alpha = .5) + 
+  geom_hline(aes(yintercept = 50), linetype = "dashed")
 
 ```
 
