@@ -74,10 +74,11 @@ library(lmerTest)
 library(knitr)
 library(rwebppl)
 library(ggridges)
-
-theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 logit <- function(x) {log(x/(1-x))}
+```
 
+```{r set-theme, cache = FALSE}
+theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 ```
 
 ```{r make-text-vars}
@@ -698,8 +699,7 @@ e2_different_means <- e2_different_inference %>%
   mutate(searchtype = "different", condition = "color")
 ```
 
-```{r}
-
+```{r e2-wppl-plot}
 e2_wppl_data <- bind_rows(e2_contrast_means, e2_same_means, 
                           e2_different_means) %>%
   mutate(p = 100 * p) %>%
@@ -938,11 +938,18 @@ full_model <- e3_model_data %>%
 e3_null_inference <- webppl(program_file = 
                                          here("webppl/e3_null.wppl"))
 
-e3_null_inference %>%
+e3_wppl_null_data <- e3_null_inference %>%
   pivot_wider(values_from = "value", names_from = "Parameter") %>%
   mutate(p = as.numeric(p)) %>%
   group_by(obj) %>%
-  summarise(p = mean(p))
+  summarise(p = 100 * mean(p)) %>%
+  filter(obj == "red toma") %>%
+  rename(empirical_stat = p) %>%
+  mutate(adjective = "baseline") %>%
+  select(-obj) %>%
+  expand_grid(condition = c("color", "size"),
+              searchtype = c("same", "different", "contrast"))
+  
 ```
 
 ```{r extra-models}
@@ -964,6 +971,23 @@ size_only_model <- e3_model_data %>%
   filter(effect == "fixed") %>%
   select(-effect, -group) %>%
   mutate(p.value = papaja::printp(p.value))
+
+```
+
+
+```{r e3-wppl-plot}
+e3_wppl_data <- e2_wppl_data %>%
+  bind_rows(e3_wppl_null_data)
+
+ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat, 
+                         color = searchtype, fill = searchtype)) + 
+  facet_wrap(~ condition) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
+                  position = position_dodge(.5)) + 
+  theme(legend.position = "top") + 
+  geom_col(data = e3_wppl_data, width = .5, 
+           position = position_dodge(.5), alpha = .5) + 
+  geom_hline(aes(yintercept = 50), linetype = "dashed")
 
 ```
 
