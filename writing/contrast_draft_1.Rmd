@@ -774,8 +774,10 @@ joint_data_subset <- joint_data %>%
 
 ## Discussion
 
+# Experiment 3
 
 ```{r e3-read-data}
+
 e3_data <- read_csv(here("data/exp3_turk_data.csv"))
 
 e3_keep_subjs <- e3_data %>%
@@ -813,7 +815,6 @@ e3_model <- lmer(percentage ~ condition * adjective * searchtype +
   filter(effect == "fixed")
 ```
 
-# Experiment 3
 
 In Experiments 1 and 2, we established that people can use contrastive inferences to resolve referential ambiguity and to make inferences about the feature distribution of a novel category. Additionally, in Experiment 2, we found that these two inferences do not seem to trade off substantially: even if an adjective is necessary to establish reference, people infer that it also marks atypicality. We also found that inferences of atypicality about color and size adjectives pattern very similarly, though their baseline is shifted, while color and size are not equally contrastive with respect to referential disambiguation.
 
@@ -934,7 +935,6 @@ full_model <- e3_model_data %>%
 
 
 ```{r e3-rsa}
-
 e3_null_inference <- webppl(program_file = 
                                          here("webppl/e3_null.wppl"))
 
@@ -945,10 +945,10 @@ e3_wppl_null_data <- e3_null_inference %>%
   summarise(p = 100 * mean(p)) %>%
   filter(obj == "red toma") %>%
   rename(empirical_stat = p) %>%
-  mutate(adjective = "baseline") %>%
+  mutate(adjective = "alien utterance") %>%
   select(-obj) %>%
   expand_grid(condition = c("color", "size"),
-              searchtype = c("same", "different", "contrast"))
+              searchtype = c("different", "contrast"))
   
 ```
 
@@ -977,9 +977,10 @@ size_only_model <- e3_model_data %>%
 
 ```{r e3-wppl-plot}
 e3_wppl_data <- e2_wppl_data %>%
-  bind_rows(e3_wppl_null_data)
+  bind_rows(e3_wppl_null_data) %>%
+  filter(searchtype != "same")
 
-ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat, 
+ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat, 
                          color = searchtype, fill = searchtype)) + 
   facet_wrap(~ condition) +
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
