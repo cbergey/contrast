@@ -75,10 +75,14 @@ var pragmaticListener = function(alpha, utterance){
 
 var alphaPrior = Gamma({shape: 1, scale: 1})
 
+var gaussianKernel = function(prevVal) {
+  return Gaussian({mu: prevVal, sigma: .5});
+};
+
 var modelPosterior = function() {
   Infer({method: "MCMC", samples: 5000, burn: 2000, verbose: true,
     model() {
-      var alpha = sample(alphaPrior)
+      var alpha = sample(alphaPrior, {driftKernel: gaussianKernel})
 
       var posterior_dax = pragmaticListener(alpha, "dax")
       var posterior_blue_dax = pragmaticListener(alpha, "blue dax")
