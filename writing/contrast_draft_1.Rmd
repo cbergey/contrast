@@ -471,6 +471,12 @@ color_parameter <- webppl(program_file =
 e1_parameters <- size_parameter %>%
   bind_rows(color_parameter)
 
+e1_parameter_means <- e1_parameters %>%
+  group_by(parameter) %>%
+  summarise(mean = mean(value),
+            ci_upper = quantile(value, .975),
+            ci_lower = quantile(value, .025))
+
 ggplot(e1_parameters, aes(x = value, fill = parameter)) +
   geom_histogram(alpha = .5) + 
   theme(legend.position = c(.8, .8))
