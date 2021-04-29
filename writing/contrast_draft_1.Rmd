@@ -794,8 +794,12 @@ joint_data_subset <- joint_data %>%
 
 e3_data <- read_csv(here("data/exp3_turk_data.csv"))
 
+# participants who have unbalanced numbers of trials in each condition
+e3_exclude <- e3_data %>% count(subid, utttype, searchtype) %>% filter(n == 2 | n == 3)
+
 e3_keep_subjs <- e3_data %>%
   filter(searchtype == "colorcheck", chosetarget == TRUE, attncheckscore >= 6) %>%
+  filter(!(subid %in% e3_exclude$subid)) %>%
   group_by(subid) %>%
   count() %>%
   filter(n == 4)
@@ -839,13 +843,13 @@ To strengthen our findings in a way that would allow us to better detect potenti
 
 ### Participants.
 
-Four hundred participants were recruited from Amazon Mechanical Turk. Two hundred were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and 200 participants were assigned to a condition in which the critical feature was size (small or big).
+Four hundred participants were recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and half of the participants were assigned to a condition in which the critical feature was size (small or big).
 
 ### Stimuli & Procedure.
 
 The stimuli and procedure were identical to those of Experiment 2, with the following modifications. Two factors, utterance type and object context, were fully crossed within subjects. Object context had two levels: within-category contrast and between-category contrast. In the within-category contrast condition (hereafter abbreviated as "contrast"), Alien B possessed the target object and another object of the same shape, but with a different value of the critical feature (color or size). In the between-category contrast condition (abbreviated as "different"), Alien B possessed the target object and another object of a different shape, and with a different value of the critical feature. Thus, in the within-category contrast condition, the descriptor is necessary to distinguish the referent; in the between-category contrast condition it is unnecessary but potentially helpful. There were three utterance types: adjective, no adjective, and alien utterance. In the two alien utterance trials, the aliens spoke using completely unfamiliar utterances (e.g., "Zem, noba bi yix blicket"). Participants were told in the task instructions that sometimes the aliens would talk in a completely alien language, and sometimes their language will be partly translated into English. To keep participants from making inferences about the content of the alien utterances using the utterance content of other trials, both alien language trials were first; other than this constraint, trial order was random. We manipulated the critical feature type (color or size) between subjects.
 
-After completing the study, participants were asked to select which of a set of alien words they had seen previously during the study. Four were words they had seen, and four were novel lure words. Participants were dropped from further analysis if they did not respond to at least 6 of these 8 correctly (above chance performance as indicated by a one-tailed binomial test at the $p = .05$ level). This resulted in excluding XX participants, leaving XX for further analysis.  
+After completing the study, participants were asked to select which of a set of alien words they had seen previously during the study. Four were words they had seen, and four were novel lure words. Participants were dropped from further analysis if they did not respond to at least 6 of these 8 correctly (above chance performance as indicated by a one-tailed binomial test at the $p = .05$ level). Additionally, six participants were excluded because their trial conditions were not balanced due to an error in the run of the experiment. This resulted in excluding XX participants, leaving XX for further analysis.  
 
 ```{r mean-data}
 means <- e2_subj_data %>%
@@ -883,20 +887,6 @@ ggplot(filter(means, measure == "log_rt"),
 ```
 
 
-```{r first-trial}
-first_means <- e2_subj_data %>%
-  group_by(condition, subid) %>%
-  slice(1) %>%
-  group_by(condition, adjective, searchtype, subid) %>%
-  summarise(percentage = mean(percentage)) %>%
-  tidyboot_mean(percentage)
-# ggplot(first_means, aes(x = searchtype, color = type)) + 
-#   facet_wrap(~adjective) + 
-#   geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
-#                       position = position_dodge(.5)) + 
-#   scale_color_ptol()
-```
-
 ```{r old-models}
 model <- lmer(percentage ~ condition + adjective + searchtype +
                 (adjective | subid),
@@ -919,13 +909,13 @@ tidy_rtmodel <- tidy(rtmodel) %>%
 ```{r e3-models}
 # all prereg'd models below
 
-utt_model_no_alien <- e3_model_data %>%
+e3_utt_model_no_alien <- e3_model_data %>%
   filter(utttype != "noutt") %>%
   lmer(percentage ~ utttype + (utttype|subid), data = .) %>%
   tidy(effects = "fixed")
 
 
-utt_model <- e3_model_data %>%
+e3_utt_model <- e3_model_data %>%
   mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
   lmer(percentage ~ utttype + (utttype | subid), data = .) %>%
   tidy() %>%
@@ -933,7 +923,7 @@ utt_model <- e3_model_data %>%
 
 
 # model did not converge with maximal slopes
-full_model <- e3_model_data %>%
+e3_full_model <- e3_model_data %>%
   mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
   lmer(percentage ~ utttype * searchtype * condition + 
          (utttype | subid), data = .) %>%
@@ -1015,11 +1005,10 @@ Thus, participants treated all adjectives as marked, and inferred lower typicali
 
 Overall, we find that people are able to use descriptive contrast to infer the referent of a novel word and to make inferences about a novel referent’s category. In our first experiment, participants were able to resolve referential ambiguity using a contrastive interpretation of size adjectives, though not reliably with color adjectives. In our second and third experiments, participants inferred that a described referent was atypical of its category on that feature: hearing "big toma" led them to think that most tomas were not that size. In real life it is often unclear whether description is meant to contrast with present objects or imply atypicality. In our second and third experiments, participants adjusted their typicality judgments slightly based on the object context: when the object context was two objects of different kinds with the same critical feature, they judged the target object as slightly more atypical. However, participants did not significantly adjust their prevalence judgments based on the interaction of adjective use and object context—-that is, they did not adjust their inferences about typicality based on how redundant description was in context. Further, contexts in which description was necessary to identify the referent did not preempt inferences of atypicality. 
 
-Participants notably failed to use color adjectives contrastively in choosing referents. What makes size different from color? One possibility is that color adjectives are often used redundantly, and therefore receive less contrastive weight than adjectives consistently used to differentiate between referents. Sedivy (2003) puts forth such an account, finding that color adjectives tend not to be interpreted contrastively in eye-tracking measures except in contexts that make their use unlikely. In comparison, adjectives describing material (e.g., plastic) and size are interpreted contrastively, which corresponds to less redundant use of material and size adjectives in production [@sedivy_pragmatic_2003-2; see Chapter 10 of @gibson_processing_2011]. This account explains well why color is not interpreted contrastively here, but fails to explain why presumably rare adjectives (bluer, bright) do not receive contrastive treatment in our task. Further work is necessary to determine whether contrastive inferences hew to production norms, and whether implicit indications of contrast usually extend to explicit referent choice.
+Participants notably failed to use color adjectives contrastively in choosing referents. What makes size different from color? One possibility is that color adjectives are often used redundantly, and therefore receive less contrastive weight than adjectives consistently used to differentiate between referents. Sedivy (2003) puts forth such an account, finding that color adjectives tend not to be interpreted contrastively in eye-tracking measures except in contexts that make their use unlikely. In comparison, adjectives describing material (e.g., plastic) and size are interpreted contrastively, which corresponds to less redundant use of material and size adjectives in production [@sedivy_pragmatic_2003-2; see Chapter 10 of @gibson_processing_2011]. Further work is necessary to determine whether contrastive inferences hew to production norms, and whether implicit indications of contrast usually extend to explicit referent choice.
 
 The relative robustness of contrastive inferences about typicality across contexts and adjective types compared to contrastive inferences among present referents raises questions about the relative importance of these two kinds of contrast in language understanding. Most prior work has focused on contrast with present referents as the main phenomenon of interest, with object typicality as a modulating factor; our results emphasize the role of contrast with an object’s category, particularly when ambiguity is at play. Future work will explore whether people make subtle trade-offs between contrast with present referents and with the referent’s category, and why color–size asymmetries seem to differ between these two types of contrast.
 
-Description is not limited to conveying contrast between present objects: it can also convey contrast with an object's category. In Experiment 3, we tested whether listeners inferred that a described feature of a novel object was atypical of its category, and how this inference was affected by the distractor objects present. We find that listeners infer atypicality from use of descriptors. However, they do not reserve this inference for cases of over-description alone: listeners inferred atypicality of a described feature even when the descriptor was necessary to establish reference. Listeners, then, seem not to rationally weigh the potential contrasts intended by the listener and trade off between them. Rather, participants' behavior in this task is better described by a coarse heuristic: use of description implies atypicality in relation to the category. Despite not being very sensitive to the referential context in their overt judgments, participants in our third experiment did show facilitation from contrast in processing. Directionally, participants advanced more quickly on trials in which a descriptor was used and was necessary to establish reference than on trials when a supplied descriptor was unnecessary. Overall, our results suggest that the atypicality inference is robust to the point of being difficult to suppress: it is not discounted, even when a descriptor is needed to distinguish between present objects. Participants do trend toward showing effects of the object context in their reaction times, but this processing effect does not consistently extend to overt judgments about the target's category.
 
 Though the participants in our experiments were adults, the ability to disambiguate novel referents using contrast most obviously serves budding language learners: children. Contrastive use of adjectives is a pragmatic regularity in language that children could potentially exploit to establish word--referent mappings. Further, use of adjectives has been shown to allow children to make contrastive inferences among familiar present objects (Huang & Snedeker, 2008) and, when paired with contrastive cues such as prosody, about novel object typicality (Horowitz & Frank, 2016); future work will explore whether adjective contrast alone is a viable learning tool in early childhood. Tasks using a mixture of novel adjectives and words suggest that children as young as 3 can make contrastive inferences about adjectives [@gelman_implicit_1985; @diesendruck_childrens_2006; @huangsnedeker2008]. Contrastive inferences allow people to learn the meanings of new words and the typical features of new categories, pointing to a broader potential role of pragmatic inference in learning about the world. 
 
