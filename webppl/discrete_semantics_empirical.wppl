@@ -16,11 +16,8 @@ var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
 //               {objects: objects2, utterances: utterances2,
 //                ps: [11, 66, 23], string: "two dax"}]
 
-
-var worlds = [{objects: objects1, utterances: utterances1,
-              string: "two toma"},
-             {objects: objects2, utterances: utterances2,
-              string: "two dax"}]
+var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
+              {objects: objects2, utterances: utterances2, string: "two dax"}]
 
 
 // prior over world states
@@ -31,8 +28,8 @@ var worldsPrior = function() {
 
 // prior over object states
 var objectPrior = function(objects, priors) {
-  //var obj = uniformDraw(objects)
-  var obj = sample(Categorical({ps: priors, vs: objects}))
+  var obj = uniformDraw(objects)
+  //var obj = sample(Categorical({ps: priors, vs: objects}))
   return obj.string
 }
 
@@ -44,7 +41,7 @@ var meaning = function(utterance, obj){
 // literal listener
 var literalListener = function(world, utterance){
   Infer({model: function(){
-    var obj = objectPrior(world.objects, world.ps);
+    var obj = objectPrior(world.objects);
     condition(meaning(utterance, obj))
     return obj
   }})
@@ -81,8 +78,6 @@ var pragmaticListener = function(utterance){
     return{obj, world_string}
   }})
 }
-
-
 // define actor optimality
-var alpha = 7
-pragmaticListener(_.first(data))
+var alpha = _.first(data).mean
+pragmaticListener(_.first(data).utterance)
