@@ -11,10 +11,15 @@ var objects2 = [{color: "blue", shape: "dax", string: "blue dax"},
 var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma"]
 var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
 
+// var worlds = [{objects: objects1, utterances: utterances1,
+//                ps: [11, 66, 23], string: "two toma"},
+//               {objects: objects2, utterances: utterances2,
+//                ps: [11, 66, 23], string: "two dax"}]
+
 var worlds = [{objects: objects1, utterances: utterances1,
-               ps: [11, 66, 23], string: "two toma"},
-              {objects: objects2, utterances: utterances2,
-               ps: [11, 66, 23], string: "two dax"}]
+              ps: [1, 1, 1], string: "two toma"},
+             {objects: objects2, utterances: utterances2,
+              ps: [1, 1, 1], string: "two dax"}]
 
 // var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
 //               {objects: objects2, utterances: utterances2, string: "two dax"}]

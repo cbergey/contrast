@@ -441,11 +441,11 @@ e1_estimation_data <- e1_data_no_gather %>%
   filter(!is.na(world), !is.na(obj))
 
 size_estimation_data <- e1_estimation_data %>%
-  filter(obj != "red dax") %>%
+  filter(!(obj == "red dax" & adj)) %>%
   filter(condition == "size")
 
 color_estimation_data <- e1_estimation_data %>%
-  filter(obj != "red dax") %>%
+  filter(!(obj == "red dax" & adj)) %>%
   filter(condition == "color")
 
 
@@ -482,6 +482,7 @@ ggplot(e1_parameters, aes(x = value, fill = parameter)) +
 two_world_utterances <- tibble(utterance = c("dax", "blue dax"),
                                utterance_num = as.character(1:2))
 
+
 e1_webppl_input <- two_world_utterances %>%
   mutate(parameter = "color") %>%
   bind_rows(mutate(two_world_utterances, parameter = "size")) %>%
@@ -489,7 +490,7 @@ e1_webppl_input <- two_world_utterances %>%
   group_by(utterance_num, parameter) %>%
   nest()
   
-two_world_inference <- e1_webppl_input %>%
+two_world_inference <- e1_webppl_input  %>%
   mutate(model_output = map(data, ~webppl(program_file =
                                          here("webppl/discrete_semantics_empirical.wppl"),
                                        data = .x))) %>%   
