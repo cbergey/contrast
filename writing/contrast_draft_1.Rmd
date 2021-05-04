@@ -53,7 +53,7 @@ set.seed(42)
 options(digits=3, dplyr.summarise.inform = FALSE)
 ```
 
-```{r libraries}
+```{r libraries, cache = FALSE}
 library(png)
 library(grid)
 library(ggplot2)
@@ -911,16 +911,24 @@ tidy_rtmodel <- tidy(rtmodel) %>%
 
 e3_utt_model_no_alien <- e3_model_data %>%
   filter(utttype != "noutt") %>%
+  mutate(utttype = factor(utttype, levels = c("noadj", "adj"))) %>%
   lmer(percentage ~ utttype + (utttype|subid), data = .) %>%
-  tidy(effects = "fixed")
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
 
+make_text_vars(e3_utt_model_no_alien, "e3_adj_no_alien", "utttypeadj")
 
 e3_utt_model <- e3_model_data %>%
   mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
   lmer(percentage ~ utttype + (utttype | subid), data = .) %>%
   tidy() %>%
-  filter(effect == "fixed")
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
 
+walk2(c("e3_utt_model_adj", "e3_utt_model_noadj"), 
+      c("utttypenoadj", "utttypeadj"), 
+      ~ make_text_vars(e3_utt_model, .x, .y))
 
 # model did not converge with maximal slopes
 e3_full_model <- e3_model_data %>%
@@ -931,6 +939,22 @@ e3_full_model <- e3_model_data %>%
   filter(effect == "fixed") %>%
   select(-effect, -group) %>%
   mutate(p.value = papaja::printp(p.value))
+
+walk2(c("e3_full_noadj", "e3_full_adj", "e3_full_size", "e3_full_diffshapes", "e3_full_adj_size"), 
+      c("utttypenoadj", "utttypeadj", "conditionsize", "searchtypedifferentshapes", "utttypeadj:conditionsize"), 
+      ~ make_text_vars(e3_full_model, .x, .y))
+
+e3_full_model_no_alien <- e3_model_data %>%
+  filter(utttype != "noutt") %>%
+  mutate(utttype = factor(utttype, levels = c("noadj", "adj"))) %>%
+  lmer(percentage ~ utttype * searchtype * condition + 
+         (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  select(-effect, -group) %>%
+  mutate(p.value = papaja::printp(p.value))
+
+make_text_vars(e3_full_model_no_alien, "e3_noalien_adj", "utttypeadj")
 
 ```
 
@@ -996,7 +1020,13 @@ ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat,
 
 ## Results
 
-We first analyzed participants' judgments of the prevalence of the target object's critical feature in its category. We began by fitting a maximum mixed-effects linear model: effects utterance type (adjective or no adjective), context type (contrast, different, or same), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, and fixed effects were removed if they did not improve model fit. The final model revealed significant effects of utterance type ($\beta_{adjective} =$ , $t =$ , $p$ ), critical feature ($\beta_{size} =$ , $t =$ , $p$ ) and a marginally lower prevalence for same search type relative to contrast search type ($\beta_{same} =$ , $t =$ , $p =$ ). Prevalence judgments for different trials was not reliably different from contrast trials ($\beta_{different} =$ , $t =$ , $p =$ ). Participants robustly inferred that described features were less prevalent in the target's category than unmentioned features. This atypicality inference was marginally stronger for trials on which the distractor had the same feature as the target, making the descriptor particularly unhelpful, than on trials in which the descriptor was necessary to distinguish between two objects of the same type. Overall, however, participants failed to substantially adjust their inferences according to the context of the referring expression.
+We began by fitting a pre-registered maximum mixed-effects linear model: effects utterance type (alien utterance, adjective, or no adjective; alien utterance as reference level), context type (contrast or different), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, which resulted in a model with all fixed effects, all interactions and a random slope of utterance type by subject. The final model revealed a significant effect of the no adjective utterance type compared to the alien utterance type ($\beta =$ `r e3_full_noadj_estimate`, $t =$ `r e3_full_noadj_statistic`, $p =$ `r e3_full_noadj_p.value`) and a marginal effect of the adjective utterance type compared to the alien utterance type ($\beta =$ `r e3_full_adj_estimate`, $t =$ `r e3_full_adj_statistic`, $p =$ `r e3_full_adj_p.value`). The effects of search type and adjective type were not significant ($\beta_{different} =$ `r e3_full_diffshapes_estimate`, $t_{different} =$ `r e3_full_diffshapes_statistic`, $p_{different} =$ `r e3_full_diffshapes_p.value`; $\beta_{size} =$ `r e3_full_size_estimate`, $t_{size} =$ `r e3_full_size_statistic`, $p_{size} =$ `r e3_full_size_p.value`), and there was a significant interaction between the adjective utterance type and the size condition ($\beta =$ `r e3_full_adj_size_estimate`, $t =$ `r e3_full_adj_size_statistic`, $p =$ `r e3_full_adj_size_p.value`). Thus, participants inferred that an object referred to in an intelligible utterance with no description was more typical of its category on the target feature than an object referred to with an alien utterance. They also inferred that an object referred to in an intelligible utterance with description was marginally less typical than an object referred to with an alien utterance, and this effect was slightly stronger in the size condition. They did not substantially adjust their inferences based on the object context.
+
+Given that interpretation of these results with respect to the alien utterance condition can be difficult, we pre-registered a version of the same full model excluding alien utterance trials. This model revealed a significant effect of utterance type: participants' prevalence judgments were lower when an adjective was used than when it was not ($\beta =$ `r e3_noalien_adj_estimate`, $t =$ `r e3_noalien_adj_statistic`, $p =$ `r e3_noalien_adj_p.value`). No other effects were significant. This replicates the main effect of interest in Experiment 2: that when an adjective is used in referring to the object, participants infer that the described feature is less typical of that object's category than when the feature goes unmentioned. 
+
+We then ran two pre-registered, targeted regressions to test the effect of utterance type to more specifically. First, we filtered to adjective and no adjective trials and fit a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Participants' prevalence judgments were significantly lower when an adjective was used in the utterance ($\beta =$ `r e3_adj_no_alien_estimate`, $t =$ `r e3_adj_no_alien_statistic`, $p =$ `r e3_adj_no_alien_p.value`). Second, we included all trials in a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Utterances without an adjective resulted in significantly higher prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_noadj_estimate`, $t =$ `r e3_utt_model_noadj_statistic`, $p =$ `r e3_utt_model_noadj_p.value`), and utterances with an adjective did not result in significantly different prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_adj_estimate`, $t =$ `r e3_utt_model_adj_statistic`, $p =$ `r e3_utt_model_adj_p.value`)
+
+
 
 Thus, participants treated all adjectives as marked, and inferred lower typicality, regardless of whether they could felicitously be interpreted as contrasting between potential target referents. But were participants nonetheless sensitive to this information in their response times? We investigated this question by analyzing participants' time to advance after seeing the aliens' referential exchange. Though this task was not speeded, we hypothesized that participants would advance more quickly after seeing referential exchanges that were easier to process. After dropping all response times less than 1 second and longer than 10 seconds, and log transforming them because of the right skew in response time data, we predicted participants' time to advance on each trial of the experiment from utterance type, context type, critical adjective type, and the interaction between utterance type and context type (\texttt{log(rt) $\sim$ adjective * search + type + (1 |subj)}). This model showed a reliable effect of utterance type ($\beta_{adjective} =$ , $t =$ , $p$ )--participants were faster when an a descriptor was provided despite having to process an additional word. There was no main effect of critical adjective type ($\beta_{size} =$ , $t =$ , $p =$ ), nor context type ($\beta_{different} =$ , $t =$ , $p =$ ; $\beta_{same} =$ , $t =$ , $p =$ ), but the interactions between utterance type and context type trended towards significance for both non-contrast searches ($\beta_{adjective*different} =$ , $t =$ , $p =$ ; $\beta_{adjecgive*same} =$ , $t =$ , $p =$ ). Directionally, these results indicate that participants took longer to process utterances which were under-described (contrast trials with no adjective) than those with appropriately no description, and processed trials with an appropriate level of description (contrast trials with an adjective) more quickly than those with superfluous description.
 
