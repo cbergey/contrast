@@ -11,8 +11,18 @@ var objects2 = [{color: "blue", shape: "dax", string: "blue dax"},
 var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma"]
 var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
 
-var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
-              {objects: objects2, utterances: utterances2, string: "two dax"}]
+// var worlds = [{objects: objects1, utterances: utterances1,
+//                ps: [11, 66, 23], string: "two toma"},
+//               {objects: objects2, utterances: utterances2,
+//                ps: [11, 66, 23], string: "two dax"}]
+
+var worlds = [{objects: objects1, utterances: utterances1,
+              ps: [1, 1, 1], string: "two toma"},
+             {objects: objects2, utterances: utterances2,
+              ps: [1, 1, 1], string: "two dax"}]
+
+// var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
+//               {objects: objects2, utterances: utterances2, string: "two dax"}]
 
 
 // prior over world states
@@ -22,8 +32,9 @@ var worldsPrior = function() {
 }
 
 // prior over object states
-var objectPrior = function(objects) {
-  var obj = uniformDraw(objects)
+var objectPrior = function(objects, priors) {
+  //var obj = uniformDraw(objects)
+  var obj = sample(Categorical({ps: priors, vs: objects}))
   return obj.string
 }
 
@@ -35,7 +46,7 @@ var meaning = function(utterance, obj){
 // literal listener
 var literalListener = function(world, utterance){
   Infer({model: function(){
-    var obj = objectPrior(world.objects);
+    var obj = objectPrior(world.objects, world.ps);
     condition(meaning(utterance, obj))
     return obj
   }})
@@ -66,14 +77,14 @@ var speaker = function(world, obj, alpha){
 var pragmaticListener = function(alpha, utterance){
   Infer({model: function(){
     var world = worldsPrior()
-    var obj = objectPrior(world.objects)
+    var obj = objectPrior(world.objects, world.ps)
     observe(speaker(world, obj, alpha), utterance)
     var world_string = world.string
     return{obj, world_string}
   }})
 }
 
-var alphaPrior = Gamma({shape: 1, scale: 1})
+var alphaPrior = Gamma({shape: 2, scale: 2})
 
 var gaussianKernel = function(prevVal) {
   return Gaussian({mu: prevVal, sigma: .5});
@@ -82,7 +93,7 @@ var gaussianKernel = function(prevVal) {
 var modelPosterior = function() {
   Infer({method: "MCMC", samples: 5000, burn: 2000, verbose: true,
     model() {
-      var alpha = sample(alphaPrior, {driftKernel: gaussianKernel})
+      var alpha = sample(alphaPrior)
 
       var posterior_dax = pragmaticListener(alpha, "dax")
       var posterior_blue_dax = pragmaticListener(alpha, "blue dax")

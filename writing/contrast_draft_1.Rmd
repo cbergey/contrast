@@ -398,7 +398,7 @@ If instead the speaker produced "find the small dax," the model will make a diff
 
 While these descriptions use deterministic language for clarity, the model's computation is probabilistic and thus reflects tendencies to choose those objects rather than fixed rules. Figure \ref{fig:e1-webppl-plot} shows model predictions alongside people's behavior for the size and color contrast conditions in Experiment 1. In line with the intuition above, the model predicts that hearing a bare noun (e.g. "dax") should lead people to infer that the intended referent is the unique object (lure), whereas hearing a modified noun (e.g. "small dax") should lead people to infer that the speaker's intended referent is the target. 
 
-```{r e1-webppl}
+```{r e1-webppl, eval = FALSE}
 two_world_utterances <- tibble(utterance = c("dax", "blue dax"),
                                utterance_num = as.character(1:2))
 
@@ -440,17 +440,12 @@ e1_estimation_data <- e1_data_no_gather %>%
                          TRUE ~ NA_character_)) %>%
   filter(!is.na(world), !is.na(obj))
 
-e1_estimation_data %>%
-  group_by(utt, world, obj) %>%
-  count()
-
-
 size_estimation_data <- e1_estimation_data %>%
-  filter(obj != "red dax") %>%
+  filter(!(obj == "red dax" & adj)) %>%
   filter(condition == "size")
 
 color_estimation_data <- e1_estimation_data %>%
-  filter(obj != "red dax") %>%
+  filter(!(obj == "red dax" & adj)) %>%
   filter(condition == "color")
 
 
@@ -482,6 +477,44 @@ ggplot(e1_parameters, aes(x = value, fill = parameter)) +
   theme(legend.position = c(.8, .8))
 ```
 
+
+```{r e1-webppl-empirical}
+two_world_utterances <- tibble(utterance = c("dax", "blue dax"),
+                               utterance_num = as.character(1:2))
+
+
+e1_webppl_input <- two_world_utterances %>%
+  mutate(parameter = "color") %>%
+  bind_rows(mutate(two_world_utterances, parameter = "size")) %>%
+  left_join(e1_parameter_means, by = "parameter") %>%
+  group_by(utterance_num, parameter) %>%
+  nest()
+  
+two_world_inference <- e1_webppl_input  %>%
+  mutate(model_output = map(data, ~webppl(program_file =
+                                         here("webppl/discrete_semantics_empirical.wppl"),
+                                       data = .x))) %>%   
+  select(-data) %>%
+  unnest(cols = c(model_output)) %>%
+  left_join(two_world_utterances, by = "utterance_num") %>%
+  ungroup() %>%
+  select(-utterance_num) %>%
+  mutate(utterance = if_else(utterance == "dax", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")),
+         obj = case_when(obj == "blue dax" & world_string == "two toma" ~ "lure",
+                         obj == "blue dax" & world_string == "two dax" ~ "target",
+                         obj != "blue dax" ~ NA_character_)) %>%
+  filter(!is.na(obj)) 
+  
+
+e1_webppl_data <- e1_mean_data %>%
+  filter(searchtype == "contrast") %>%
+  select(-searchtype) %>%
+  rename(utterance = adjective_used) %>%
+  left_join(two_world_inference, by = c("utterance", "item" = "obj", 
+                                        "condition" = "parameter")) %>%
+  mutate(prob_min = prob, prob_max = prob)
+```
 
 ```{r e1-webppl-plot, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", fig.cap = "Proportion of times that people (and our model) chose the target and lure items as a function of adjective type and whether an adjective was provided. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid lines show model predictions."}
 ggplot(e1_webppl_data, aes(x = utterance, color = item, fill = item)) + 

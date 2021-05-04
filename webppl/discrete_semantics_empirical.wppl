@@ -16,11 +16,13 @@ var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
 //               {objects: objects2, utterances: utterances2,
 //                ps: [11, 66, 23], string: "two dax"}]
 
-
 var worlds = [{objects: objects1, utterances: utterances1,
-              string: "two toma"},
+              ps: [1, 1, 1], string: "two toma"},
              {objects: objects2, utterances: utterances2,
-              string: "two dax"}]
+              ps: [1, 1, 1], string: "two dax"}]
+
+// var worlds = [{objects: objects1, utterances: utterances1, string: "two toma"},
+//               {objects: objects2, utterances: utterances2, string: "two dax"}]
 
 
 // prior over world states
@@ -81,8 +83,6 @@ var pragmaticListener = function(utterance){
     return{obj, world_string}
   }})
 }
-
-
 // define actor optimality
-var alpha = 7
-pragmaticListener(_.first(data))
+var alpha = _.first(data).mean
+pragmaticListener(_.first(data).utterance)
