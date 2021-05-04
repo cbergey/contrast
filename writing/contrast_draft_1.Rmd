@@ -677,80 +677,45 @@ ggplot(markedness_inference, aes(x = utterance, y = value)) +
   labs(x = "utterance", y = "proportion of [nouns] that are [adjective]")
 ```
 
-```{r e2-contrast-webbpl}
-e2_contrast_utterances <- tibble(utterance = c("toma", "red toma"),
-                                utterance_num = as.character(1:2))
+```{r e2-empirical}
+e2_utterances <- expand_grid(utterance = c("toma", "red toma"),
+                             type = c("contrast", "same", "different"),
+                             parameter = c("size", "color")) %>%
+  mutate(utterance_num = if_else(utterance == "toma", 1, 2)) %>%
+  left_join(e1_parameter_means, by = "parameter")
+ 
 
-e2_contrast_inference <- map_dfr(e2_contrast_utterances %>% pull(utterance), 
-                               ~webppl(program_file = 
-                                         here("webppl/e2_contrast.wppl"), 
-                                       data = .x),
-                               .id = "utterance_num") %>%
-  left_join(e2_contrast_utterances, by = "utterance_num") %>%
+e2_inference <- e2_utterances %>%
+  group_by(utterance_num, parameter, type) %>%
+  nest()
+  mutate(model_output = map(data, ~webppl(program_file =
+                                         here(glue("webppl/e2_{type}_empirical.wppl")),
+                                       data = .x))) %>%
+  select(-data) %>%
+  unnest(cols = c(model_output)) %>%
+  select(-data) %>%
+  unnest(cols = c(model_output)) %>%
+  left_join(e2_utterances, by = c("utterance_num", "type", "parameter")) %>%
+  ungroup() %>%
   select(-utterance_num) %>%
-  as_tibble() %>%
   mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
-         utterance = factor(utterance, levels = c("noun", "adjective noun")))
-
-
-e2_contrast_means <- e2_contrast_inference %>%
+         utterance = factor(utterance, 
+                            levels = c("noun", "adjective noun")))
+  
+  
+e2_inference_means <- e2_inference %>%
   pivot_wider(names_from = Parameter, values_from = value) %>%
   mutate(p = as.numeric(p)) %>%
   filter(obj == "red toma") %>%
-  group_by(utterance) %>%
-  summarise(p = mean(p)) %>%
-  mutate(searchtype = "contrast", condition = "color")
-```
-
-```{r e2-same-webppl}
-e2_same_inference <- map_dfr(e2_contrast_utterances %>% pull(utterance), 
-                               ~webppl(program_file = 
-                                         here("webppl/e2_same.wppl"), 
-                                       data = .x),
-                               .id = "utterance_num") %>%
-  left_join(e2_contrast_utterances, by = "utterance_num") %>%
-  select(-utterance_num) %>%
-  as_tibble() %>%
-  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
-         utterance = factor(utterance, levels = c("noun", "adjective noun")))
-
-
-e2_same_means <- e2_same_inference %>%
-  pivot_wider(names_from = Parameter, values_from = value) %>%
-  mutate(p = as.numeric(p)) %>%
-  filter(obj == "red toma", world == "target world") %>%
-  group_by(utterance) %>%
-  summarise(p = mean(p)) %>%
-  mutate(searchtype = "same", condition = "color")
-```
-
-```{r e2-different-webppl}
-e2_different_inference <- map_dfr(e2_contrast_utterances %>% pull(utterance), 
-                               ~webppl(program_file = 
-                                         here("webppl/e2_different.wppl"), 
-                                       data = .x),
-                               .id = "utterance_num") %>%
-  left_join(e2_contrast_utterances, by = "utterance_num") %>%
-  select(-utterance_num) %>%
-  as_tibble() %>%
-  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
-         utterance = factor(utterance, levels = c("noun", "adjective noun")))
-
-
-e2_different_means <- e2_different_inference %>%
-  pivot_wider(names_from = Parameter, values_from = value) %>%
-  mutate(p = as.numeric(p)) %>%
-  filter(obj == "red toma", world == "target world") %>%
-  group_by(utterance) %>%
-  summarise(p = mean(p)) %>%
-  mutate(searchtype = "different", condition = "color")
+  group_by(utterance, type, parameter) %>%
+  summarise(p = mean(p))
 ```
 
 ```{r e2-wppl-plot}
-e2_wppl_data <- bind_rows(e2_contrast_means, e2_same_means, 
-                          e2_different_means) %>%
+e2_wppl_data <- e2_inference_means %>%
   mutate(p = 100 * p) %>%
-  rename(empirical_stat = p, adjective = utterance)
+  rename(empirical_stat = p, adjective = utterance,
+         searchtype = type, condition = parameter)
 
 ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat, 
                          color = searchtype, fill = searchtype)) + 
