@@ -677,7 +677,63 @@ ggplot(markedness_inference, aes(x = utterance, y = value)) +
   labs(x = "utterance", y = "proportion of [nouns] that are [adjective]")
 ```
 
-```{r e2-empirical}
+
+
+```{r estimate-e2-params}
+e2_estimation_data <- e2_data_no_gather %>%
+  filter(searchtype == "contrast") %>%
+  mutate(choseother = !chosetarget & !choselure) %>%
+  select(condition, adj, chosetarget, choselure, choseother) %>%
+  mutate(utt = if_else(adj, "blue dax", "dax")) %>%
+  mutate(world = case_when(chosetarget ~ "two dax",
+                         choselure ~ "two toma",
+                         choseother ~ "two dax",
+                         TRUE ~ NA_character_),
+         obj = case_when(choseother ~ "red dax",
+                         chosetarget | choselure ~ "blue dax",
+                         TRUE ~ NA_character_)) %>%
+  filter(!is.na(world), !is.na(obj))
+
+size_estimation_data <- e1_estimation_data %>%
+  filter(!(obj == "red dax" & adj)) %>%
+  filter(condition == "size")
+
+color_estimation_data <- e1_estimation_data %>%
+  filter(!(obj == "red dax" & adj)) %>%
+  filter(condition == "color")
+
+
+size_parameter <- webppl(program_file =
+                           here("webppl/infer_discrete_semantics.wppl"), 
+                          data = size_estimation_data, 
+                          data_var = "empiricalData") %>%
+  as_tibble() %>%
+  mutate(parameter = "size")
+
+color_parameter <- webppl(program_file =
+                           here("webppl/infer_discrete_semantics.wppl"), 
+                          data = color_estimation_data, 
+                          data_var = "empiricalData") %>%
+  as_tibble() %>%
+  mutate(parameter = "color")
+
+e1_parameters <- size_parameter %>%
+  bind_rows(color_parameter)
+
+e1_parameter_means <- e1_parameters %>%
+  group_by(parameter) %>%
+  summarise(mean = mean(value),
+            ci_upper = quantile(value, .975),
+            ci_lower = quantile(value, .025))
+
+ggplot(e1_parameters, aes(x = value, fill = parameter)) +
+  geom_histogram(alpha = .5) + 
+  theme(legend.position = c(.8, .8))
+```
+
+
+
+```{r e2-empirical, eval = FALSE}
 e2_utterances <- expand_grid(utterance = c("toma", "red toma"),
                              type = c("contrast", "same", "different"),
                              parameter = c("size", "color")) %>%
@@ -687,12 +743,10 @@ e2_utterances <- expand_grid(utterance = c("toma", "red toma"),
 
 e2_inference <- e2_utterances %>%
   group_by(utterance_num, parameter, type) %>%
-  nest()
+  nest() %>%
   mutate(model_output = map(data, ~webppl(program_file =
                                          here(glue("webppl/e2_{type}_empirical.wppl")),
                                        data = .x))) %>%
-  select(-data) %>%
-  unnest(cols = c(model_output)) %>%
   select(-data) %>%
   unnest(cols = c(model_output)) %>%
   left_join(e2_utterances, by = c("utterance_num", "type", "parameter")) %>%
@@ -711,7 +765,7 @@ e2_inference_means <- e2_inference %>%
   summarise(p = mean(p))
 ```
 
-```{r e2-wppl-plot}
+```{r e2-wppl-plot, eval = FALSE}
 e2_wppl_data <- e2_inference_means %>%
   mutate(p = 100 * p) %>%
   rename(empirical_stat = p, adjective = utterance,
@@ -998,7 +1052,7 @@ size_only_model <- e3_model_data %>%
 ```
 
 
-```{r e3-wppl-plot}
+```{r e3-wppl-plot, eval = FALSE}
 e3_wppl_data <- e2_wppl_data %>%
   bind_rows(e3_wppl_null_data) %>%
   filter(searchtype != "same")
