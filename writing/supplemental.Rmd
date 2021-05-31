@@ -1,0 +1,256 @@
+---
+title: "\\LARGE Using contrastive inferences to learn about new words and categories"
+author: "\\large \\emph{XXXXX, XXXXX, and XXXXX}"
+header-includes:
+  - \usepackage[section]{placeins}
+  - \usepackage{float}
+  - \floatplacement{figure}{h!} # make every figure with caption = t
+  - \raggedbottom
+output: 
+  pdf_document:
+    latex_engine: xelatex
+    number_sections: true
+documentclass: article
+bibliography: contrast.bib
+fontsize: 11pt
+geometry: margin=1in
+csl: apa6.csl
+---
+
+```{r load-libraries, message=FALSE, warning=FALSE, include = F}
+library(readxl)
+library(janitor)
+library(here)
+library(knitr)
+library(papaja)
+library(kableExtra)
+library(tidyverse)
+library(tidyboot)
+library(feather)
+library(lme4)
+library(lmerTest)
+library(broom)
+library(broom.mixed)
+library(effectsize)
+library(glue)
+opts_chunk$set(message = FALSE, warning = FALSE, error = FALSE, cache = TRUE, 
+               tidy = FALSE, echo = FALSE)
+theme_set(theme_classic(base_size = 12))
+options(digits=2)
+```
+
+```{r make-text-vars}
+make_text_vars <- function(df, term_name, term_filter = NULL) {
+  if(!is.null(term_filter)) {
+    filtered_df <- df %>%
+      filter(term == term_filter) 
+  } else{
+    filtered_df <- df
+  }
+    
+  walk(c("estimate", "statistic", "p.value"), 
+      ~assign(glue("{term_name}_{.x}"), 
+              filtered_df %>% pull(!!.x), 
+         envir = globalenv()))
+}
+```
+\renewcommand\thesection{S\arabic{section}}
+\renewcommand{\thetable}{S\arabic{table}}  
+\renewcommand{\thefigure}{S\arabic{figure}}
+\section{Experiment 1}
+
+
+\section{Experiment 2}
+
+```{r e2-read-data}
+e2_color_data <- read_csv(here("data/exp2/color.csv")) %>%
+  mutate(condition = "color", targetsize = "big") %>%
+  rename(adj = colorasked, distractorfeature = distractorcolor)
+
+e2_size_data <- read_csv(here("data/exp2/size.csv")) %>%
+  mutate(condition = "size") %>%
+  rename(adj = sizeasked, distractorfeature = distractorsize)
+
+e2_data <- rbind(e2_color_data, e2_size_data) %>%
+  mutate(subid = paste0(subid, condition))
+
+e2_keep_subjs <- e2_data %>%
+  filter(searchtype == "attncheck", attncheckscore >= 6) %>%
+  group_by(subid) 
+
+e2_model_data <- e2_data %>%
+  filter(subid %in% e2_keep_subjs$subid) %>%
+  mutate(rtsearch = rtsearch - 6500) %>%
+  mutate(log_rt = log(rtsearch)) %>%
+  filter(trialtype != 0)
+
+e2_subj_data <- e2_data %>%
+  filter(subid %in% e2_keep_subjs$subid) %>%
+  filter(trialtype != 0) %>%
+  rename(adjective = adj) %>%
+  mutate(searchtype = if_else(searchtype == "polychrome" | 
+                                searchtype == "differentsizes",
+                                      "different", searchtype)) %>%
+  mutate(searchtype = if_else(searchtype == "monochrome" |
+                                searchtype == "samesize",
+                                      "same", searchtype)) %>%
+  mutate(rtsearch = rtsearch - 6500) %>%
+  mutate(log_rt = log(rtsearch)) %>%
+  mutate(adjective = if_else(adjective == TRUE, "adjective noun", "noun"),
+         adjective = factor(adjective, levels = c("noun", "adjective noun")),
+         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
+
+e2_mean_data <- e2_subj_data %>%
+  group_by(searchtype, adjective, condition) %>%
+  tidyboot_mean(percentage)
+
+e2_model <- lmer(percentage ~ condition * adjective * searchtype +
+                (adjective | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = e2_subj_data) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("e2_adj", "e2_search_same", "e2_search_different", "e2_adj_diff", "e2_adj_same"), 
+      c("adjectiveadjective noun", "searchtypesame", "searchtypedifferent",
+        "adjectiveadjective noun:searchtypedifferent", "adjectiveadjective noun:searchtypesame"), 
+      ~ make_text_vars(e2_model, .x, .y))
+```
+
+```{r rt-model}
+rtmodel <- lmer(log_rt ~ adjective * searchtype + condition +
+                (1 | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = e2_subj_data) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+tidy_rtmodel <- tidy(rtmodel) %>%
+  filter(effect == "fixed")
+```
+
+Thus, participants treated all adjectives as marked, and inferred lower typicality, regardless of whether they could felicitiously be interpreted as contrasting between potential target referents. But were participants nonetheless sensitive to this information in their response times? We investigated this question by analyzing participants' time to advance after seeing the aliens' referential exchange. Though this task was not speeded, we hypothesized that participants would advance more quickly after seeing referential exchanges that were easier to process. After dropping all response times less than 1 second and longer than 10 seconds, and log transforming them because of the right skew in response time data, we predicted participants' time to advance on each trial of the experiment from utterance type, context type, critical adjective type, and the interaction between utterance type and context type (\texttt{log(rt) $\sim$ adjective * search + type + (1 |subj)}). This model showed a reliable effect of utterance type ($\beta_{adjective} =$ , $t =$ , $p$ )--participants were faster when an a descriptor was provided despite having to process an additional word. There was no main effect of critical adjective type ($\beta_{size} =$ , $t =$ , $p =$ ), nor context type ($\beta_{different} =$ , $t =$ , $p =$ ; $\beta_{same} =$ , $t =$ , $p =$ ), but the interactions between utterance type and context type trended towards significance for both non-contrast searches ($\beta_{adjective*different} =$ , $t =$ , $p =$ ; $\beta_{adjective*same} =$ , $t =$ , $p =$ ). Directionally, these results indicate that participants took longer to process utterances which were under-described (within-category contrast trials with no adjective) than those with appropriately no description, and processed trials with an appropriate level of description (contrast trials with an adjective) more quickly than those with superfluous description.
+
+```{r rtplotinference}
+fig.cap="The log reaction time participants took to advance after seeing the referential exchange, by condition."
+ggplot(filter(means, measure == "log_rt"),
+       aes(x = adjective, color = condition)) +
+  facet_wrap(~searchtype) +
+  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper),
+                      position = position_dodge(.5)) +
+  ylab("log reaction time") +
+  xlab("Utterance type") +
+  theme(text = element_text(size=20)) +
+  scale_color_ptol()
+```
+
+\section{Experiment 3}
+```{r e3-read-data}
+
+e3_data <- read_csv(here("data/exp3_turk_data.csv"))
+
+# participants who have unbalanced numbers of trials in each condition
+e3_exclude <- e3_data %>% count(subid, utttype, searchtype) %>% filter(n == 2 | n == 3)
+
+e3_keep_subjs <- e3_data %>%
+  filter(searchtype == "colorcheck", chosetarget == TRUE, attncheckscore >= 6) %>%
+  filter(!(subid %in% e3_exclude$subid)) %>%
+  group_by(subid) %>%
+  count() %>%
+  filter(n == 4)
+
+e3_model_data <- e3_data %>%
+  filter(subid %in% e3_keep_subjs$subid) %>%
+  filter(trialtype != 0)
+
+e3_subj_data <- e3_data %>%
+  filter(subid %in% e3_keep_subjs$subid) %>%
+  filter(trialtype != 0) %>%
+  mutate(searchtype = if_else(searchtype == "differentshapes",
+                                      "different", searchtype)) %>%
+  mutate(rtsearch = rtsearch - 6500) %>% # time before selections can be made
+  mutate(log_rt = log(rtsearch)) %>%
+  mutate(adjective = if_else(utttype == "adj", "adjective noun", utttype),
+         adjective = if_else(adjective == "noutt", "alien utterance", adjective),
+         adjective = if_else(adjective == "noadj", "noun", adjective),
+         adjective = factor(adjective, levels = c("noun", "adjective noun", "alien utterance")),
+         searchtype = factor(searchtype, levels = c("contrast", "different")))
+
+e3_mean_data <- e3_subj_data %>%
+  group_by(searchtype, adjective, condition) %>%
+  tidyboot_mean(percentage)
+
+e3_model <- lmer(percentage ~ condition * adjective * searchtype +
+                (adjective | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = e3_subj_data) %>%
+  tidy() %>%
+  filter(effect == "fixed")
+```
+
+```{r e3-models}
+# all prereg'd models below
+
+e3_utt_model_no_alien <- e3_model_data %>%
+  filter(utttype != "noutt") %>%
+  mutate(utttype = factor(utttype, levels = c("noadj", "adj"))) %>%
+  lmer(percentage ~ utttype + (utttype|subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+make_text_vars(e3_utt_model_no_alien, "e3_adj_no_alien", "utttypeadj")
+
+e3_utt_model <- e3_model_data %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  lmer(percentage ~ utttype + (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("e3_utt_model_adj", "e3_utt_model_noadj"), 
+      c("utttypeadj", "utttypenoadj"), 
+      ~ make_text_vars(e3_utt_model, .x, .y))
+
+# model did not converge with maximal slopes
+e3_full_model <- e3_model_data %>%
+  mutate(utttype = factor(utttype, levels = c("noutt", "noadj", "adj"))) %>%
+  lmer(percentage ~ utttype * searchtype * condition + 
+         (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  select(-effect, -group) %>%
+  mutate(p.value = papaja::printp(p.value))
+
+walk2(c("e3_full_noadj", "e3_full_adj", "e3_full_size", "e3_full_diffshapes", "e3_full_adj_size"), 
+      c("utttypenoadj", "utttypeadj", "conditionsize", "searchtypedifferentshapes", "utttypeadj:conditionsize"), 
+      ~ make_text_vars(e3_full_model, .x, .y))
+
+e3_full_model_no_alien <- e3_model_data %>%
+  filter(utttype != "noutt") %>%
+  mutate(utttype = factor(utttype, levels = c("noadj", "adj"))) %>%
+  lmer(percentage ~ utttype * searchtype * condition + 
+         (utttype | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  select(-effect, -group) %>%
+  mutate(p.value = papaja::printp(p.value))
+
+make_text_vars(e3_full_model_no_alien, "e3_noalien_adj", "utttypeadj")
+
+```
+
+In addition to the regressions reported in the manuscript, we two pre-registered, targeted regressions to test the effect of utterance type to more specifically in case these effects were unclear in the maximal models. First, we filtered to adjective and no adjective trials and fit a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Participants' prevalence judgments were significantly lower when an adjective was used in the utterance ($\beta =$ `r e3_adj_no_alien_estimate`, $t =$ `r e3_adj_no_alien_statistic`, $p =$ `r e3_adj_no_alien_p.value`). Second, we included all trials in a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Utterances without an adjective resulted in significantly higher prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_noadj_estimate`, $t =$ `r e3_utt_model_noadj_statistic`, $p =$ `r e3_utt_model_noadj_p.value`), and utterances with an adjective did not result in significantly different prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_adj_estimate`, $t =$ `r e3_utt_model_adj_statistic`, $p =$ `r e3_utt_model_adj_p.value`)
+
+\newpage
+
+\section*{References}
+
+\begingroup
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
+\noindent
+<div id = "refs"></div>
+\endgroup
