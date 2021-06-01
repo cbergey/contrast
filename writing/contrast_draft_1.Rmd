@@ -682,54 +682,45 @@ ggplot(markedness_inference, aes(x = utterance, y = value)) +
 
 
 ```{r estimate-e2-params}
-e2_estimation_data <- e2_data_no_gather %>%
-  filter(searchtype == "contrast") %>%
-  mutate(choseother = !chosetarget & !choselure) %>%
-  select(condition, adj, chosetarget, choselure, choseother) %>%
-  mutate(utt = if_else(adj, "blue dax", "dax")) %>%
-  mutate(world = case_when(chosetarget ~ "two dax",
-                         choselure ~ "two toma",
-                         choseother ~ "two dax",
-                         TRUE ~ NA_character_),
-         obj = case_when(choseother ~ "red dax",
-                         chosetarget | choselure ~ "blue dax",
-                         TRUE ~ NA_character_)) %>%
-  filter(!is.na(world), !is.na(obj))
+e2_estimation_data <- e2_subj_data %>%
+  select(searchtype, adjective, condition, percentage) %>%
+  mutate(utt = if_else(adjective == "adjective noun", "red toma", "toma")) %>%
+  rowwise() %>%
+  mutate(p = min(max(percentage, 1),99)) %>%
+  ungroup()
 
-size_estimation_data <- e1_estimation_data %>%
-  filter(!(obj == "red dax" & adj)) %>%
-  filter(condition == "size")
+e2_size_estimation_data <- e2_estimation_data %>%
+  filter(condition == "size") 
 
-color_estimation_data <- e1_estimation_data %>%
-  filter(!(obj == "red dax" & adj)) %>%
-  filter(condition == "color")
+e2_color_estimation_data <- e2_estimation_data %>%
+  filter(condition == "color") 
 
-
-size_parameter <- webppl(program_file =
-                           here("webppl/infer_discrete_semantics.wppl"), 
-                          data = size_estimation_data, 
+e2_size_parameter <- webppl(program_file =
+                           here("webppl/infer_e2_params.wppl"), 
+                          data = e2_size_estimation_data,
                           data_var = "empiricalData") %>%
   as_tibble() %>%
   mutate(parameter = "size")
 
-color_parameter <- webppl(program_file =
-                           here("webppl/infer_discrete_semantics.wppl"), 
-                          data = color_estimation_data, 
+e2_color_parameter <- webppl(program_file =
+                           here("webppl/infer_e2_params.wppl"), 
+                          data = e2_color_estimation_data, 
                           data_var = "empiricalData") %>%
   as_tibble() %>%
   mutate(parameter = "color")
 
-e1_parameters <- size_parameter %>%
-  bind_rows(color_parameter)
+e2_parameters <- e2_size_parameter %>%
+  bind_rows(e2_color_parameter)
 
-e1_parameter_means <- e1_parameters %>%
+e2_parameter_means <- e2_parameters %>%
   group_by(parameter) %>%
   summarise(mean = mean(value),
             ci_upper = quantile(value, .975),
             ci_lower = quantile(value, .025))
 
-ggplot(e1_parameters, aes(x = value, fill = parameter)) +
-  geom_histogram(alpha = .5) + 
+ggplot(e2_parameters, aes(x = value, fill = parameter)) +
+  facet_grid(parameter ~ .) +
+  geom_histogram() + 
   theme(legend.position = c(.8, .8))
 ```
 

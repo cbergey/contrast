@@ -1,0 +1,35 @@
+---
+title: "cache beta"
+output: html_document
+---
+
+```{r libraries}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+               error = FALSE, cache = TRUE, tidy = FALSE)
+
+library(tidyverse)
+library(here)
+library(glue)
+```
+
+```{r make-beta}
+densities <- expand_grid(x = seq(0,100,1),
+                    alpha = 2,
+                    beta = c(1,2)) %>%
+  mutate(d = dbeta(x / 100, alpha, beta))
+```
+
+```{r write-beta}
+webppl_vars <- densities %>%
+  group_by(alpha, beta) %>%
+  summarise(ps = paste(d, sep = "", collapse = ", "),
+            vs = paste(x, sep = "", collapse = ", ")) %>%
+  ungroup() %>%
+  pivot_longer(cols = c(ps, vs), names_to = "type", values_to = "values") %>%
+  mutate(str = glue("var beta_{alpha}_{beta}_{type} = [{values}]")) %>%
+  pull(str)
+
+
+write_lines(webppl_vars , here("webppl/cached_beta.txt"))
+
+```
