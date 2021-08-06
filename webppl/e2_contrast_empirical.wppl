@@ -8,21 +8,32 @@ var utterances = ["toma", "red toma", "blue toma"]
 var objects = [{color: "red", shape: "toma", string: "red toma"},
               {color: "blue", shape: "toma", string: "blue toma"}]
 
+var worlds = [{
+  objects: objects,
+  utterances: utterances,
+  string: "target world"}]
+
 // meaning function to interpret the utterances
 var meaning = function(utterance, obj){
   _.includes(obj, utterance)
 }
 
+// prior over world states
+var worldsPrior = function() {
+  var world = uniformDraw(worlds)
+  return world
+}
+
 // prior over object states
-var objectPrior = function() {
+var objectPrior = function(objects) {
   var obj = uniformDraw(objects)
   return obj.string
 }
 
 // literal listener
-var literalListener = function(utterance){
+var literalListener = function(world, utterance){
   Infer({model: function(){
-    var obj = objectPrior();
+    var obj = objectPrior(world.objects);
     condition(meaning(utterance, obj))
     return obj
   }})
@@ -65,12 +76,12 @@ var typicality = function(obj, utterance, p) {
 }
 
 // pragmatic speaker
-var speaker = function(obj, p){
+var speaker = function(world, obj, p){
   Infer({model: function(){
-    var utterance = uniformDraw(utterances)
+    var utterance = uniformDraw(world.utterances)
 
-    factor(alpha * (literalListener(utterance).score(obj) - cost(utterance)
-            + typicality(obj, utterance, p)))
+    factor(alpha * (literalListener(world, utterance).score(obj) -
+      cost(utterance) + typicality(obj, utterance, p)))
     return utterance
   }})
 }
@@ -78,10 +89,12 @@ var speaker = function(obj, p){
 // pragmatic listener
 var pragmaticListener = function(utterance){
   Infer({method: 'rejection', samples: 10000, model: function(){
-    var obj = objectPrior()
+    var world = worldsPrior()
+    var obj = objectPrior(world.objects)
+
     var p = sample(Beta({a: 2, b: 2}))
-    observe(speaker(obj, p), utterance)
-    return {obj: obj, p: p}
+    observe(speaker(world, obj, p), utterance)
+    return {world:world.string, obj: obj, p: p}
   }})
 }
 

@@ -1,0 +1,9 @@
+parameter,obj,world_string,prob,utterance
+color,lure,two toma,0.49041727836984217,noun
+color,target,two dax,0.2547913608150789,noun
+color,target,two dax,0.6755661103971096,adjective noun
+color,lure,two toma,0.3244338896028904,adjective noun
+size,lure,two toma,0.6332333428629393,noun
+size,target,two dax,0.1833833285685303,noun
+size,target,two dax,0.820316055939766,adjective noun
+size,lure,two toma,0.179683944060234,adjective noun
