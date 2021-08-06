@@ -1,0 +1,328 @@
+
+# Experiment 2
+
+```{r e2-read-data}
+e2_color_data <- read_csv(here("data/exp2/color.csv")) %>%
+  mutate(condition = "color", targetsize = "big") %>%
+  rename(adj = colorasked, distractorfeature = distractorcolor)
+
+e2_size_data <- read_csv(here("data/exp2/size.csv")) %>%
+  mutate(condition = "size") %>%
+  rename(adj = sizeasked, distractorfeature = distractorsize)
+
+e2_data <- rbind(e2_color_data, e2_size_data) %>%
+  mutate(subid = paste0(subid, condition))
+
+e2_keep_subjs <- e2_data %>%
+  filter(searchtype == "attncheck", attncheckscore >= 6) %>%
+  group_by(subid) 
+
+e2_model_data <- e2_data %>%
+  filter(subid %in% e2_keep_subjs$subid) %>%
+  filter(trialtype != 0)
+
+e2_subj_data <- e2_data %>%
+  filter(subid %in% e2_keep_subjs$subid) %>%
+  filter(trialtype != 0) %>%
+  rename(adjective = adj) %>%
+  mutate(searchtype = if_else(searchtype == "polychrome" | 
+                                searchtype == "differentsizes",
+                                      "different", searchtype)) %>%
+  mutate(searchtype = if_else(searchtype == "monochrome" |
+                                searchtype == "samesize",
+                                      "same", searchtype)) %>%
+  mutate(rtsearch = rtsearch - 6500) %>%
+  mutate(log_rt = log(rtsearch)) %>%
+  mutate(adjective = if_else(adjective == TRUE, "adjective noun", "noun"),
+         adjective = factor(adjective, levels = c("noun", "adjective noun")),
+         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
+
+e2_mean_data <- e2_subj_data %>%
+  group_by(searchtype, adjective, condition) %>%
+  tidyboot_mean(percentage)
+```
+
+```{r e2-models}
+ggplot(e2_subj_data, aes(x = adjective, y = percentage)) + 
+  facet_grid(condition ~ searchtype) + 
+  geom_boxplot()
+
+ggplot(e2_mean_data,
+       aes(x = adjective, color = condition, group = condition)) + 
+  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
+                      position = position_dodge(.5)) +
+  facet_wrap(~searchtype) +
+  ylab("Prevalence judgment") +
+  xlab("Context type") +
+  labs(color = "adj") + 
+  theme(text = element_text(size=20)) +
+  scale_color_ptol()
+
+e2_model <- lmer(percentage ~ condition * adjective * searchtype +
+                (adjective | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = e2_subj_data) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("e2_adj", "e2_search_same", "e2_search_different", "e2_adj_diff", "e2_adj_same"), 
+      c("adjectiveadjective noun", "searchtypesame", "searchtypedifferent",
+        "adjectiveadjective noun:searchtypedifferent", "adjectiveadjective noun:searchtypesame"), 
+      ~ make_text_vars(e2_model, .x, .y))
+```
+
+In our first experiment, we examined whether people would interpret description as implying contrast with other present objects. However, as discussed earlier, description can imply contrast with sets other than the set of currently available referents. One of these alternative sets is the referent's category. Work by @mitchell_2013 and @westerbeek_2015 demonstrates that speakers use more description when referring to objects with atypical features (e.g., a yellow tomato) than typical ones (e.g., a red tomato). This selective marking of atypical objects potentially supplies useful information to listeners: they have the opportunity to not only learn about the object at hand, but also about its broader category. In the following experiment, we test whether listeners use this type of contrast to learn about a novel category's feature distribution. 
+
+In our first experiment, we found that participants treat color and size adjectives as having different contrastive weight with respect to reference. We posit that this is due to production asymmetries: speakers tend to produce more color adjectives that are superfluous to establishing reference, and describe size more minimally. However, color adjectives that are redundant with respect to reference are not necessarily redundant in general. @rubio-fernandez_how_2016 demonstrates that speakers often use 'redundant' color adjectives to describe colors when they are central to the category's meaning (e.g., colorful t-shirts) or when they are atypical (e.g., a purple banana). Therefore, color may be no less contrastive with respect to the category's feature distribution. Based on this work as well as pilot studies, we predicted that color and size adjectives would both be interpreted contrastively with respect to typicality.
+
+If listeners do make contrastive inferences about typicality, it may not be as simple as judging that an over-described referent is atypical. Description can serve many purposes. In the prior experiment, we investigated its use in contrasting between present objects. If a descriptor was needed to distinguish between two present objects, it may not have been used to mark atypicality. For instance, in the context of a bin of heirloom tomatoes, a speaker who wanted a red one in particular might specify that they want a "red tomato" rather than just asking for a "tomato." In this case, the adjective "red" is being used contrastively with respect to reference (as in Experiment 1), and not to mark atypicality. Thus, a listener who does not know much about tomatoes may  attribute the production of "red" to referential disambiguation given the context and not infer that red is an unusual color for tomatoes.
+
+In Experiment 2, we used an artificial language task to set up just this kind of learning situation. We manipulated the contexts in which listeners hear adjectives modifying novel names of novel referents. We asked whether listeners infer that these adjectives identify atypical features of the named objects, and whether the strength of this inference depends on the referential ambiguity of the context in which adjectives are used.
+
+```{r e3-aliens, fig.env = "figure", fig.pos = "H", fig.align='center', set.cap.width=T, num.cols.cap=1, fig.cap = "Experiment 2 stimuli. In the above example, the critical feature is size and the object context is a within-category contrast: the alien on the right has two same-shaped objects that differ in size."}
+img <- png::readPNG(here("writing/figs/e2-stimuli.png"))
+grid::grid.raster(img)
+```
+
+## Method
+
+### Participants.
+Two hundred and forty participants were recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and the other half of participants were assigned to a condition in which the critical feature was size (small or big).
+
+### Stimuli & Procedure.
+Stimulus displays (Figure \ref{fig:e3-aliens}) showed two alien interlocutors, one on the left (Alien A) and one on the right (Alien B) side of the screen, each with two novel fruit objects beneath them. Alien A, in a speech bubble, asked Alien B for one of its fruits (e.g., "Hey, pass me the red gade.") Alien B replied, "Here you go!" and the referent disappeared from Alien B's side and reappeared on Alien A's side. 
+
+Two factors, presence of the critical adjective in the referring expression and object context, were fully crossed within subjects. Object context had three levels: within-category contrast, between-category contrast, and same feature. In the within-category contrast condition, Alien B possessed the target object and another object of the same shape, but with a different value of the critical feature (color or size). In the between-category contrast condition, Alien B possessed the target object and another object of a different shape, and with a different value of the critical feature. In the same feature condition, Alien B possessed the target object and another object of a different shape but with the same value of the critical feature as the target. Thus, in the within-category contrast condition, the descriptor is necessary to distinguish the referent; in the between-category contrast condition it is unnecessary but potentially helpful; and in the same feature condition it is unnecessary and unhelpful. We manipulated the critical feature type (color or size) between subjects.
+
+Participants performed six trials. After each exchange between the alien interlocutors, they made a judgment about the prevalence of the target's critical feature in the target object's category. For instance, after seeing a red blicket being exchanged, participants would be asked, "On this planet, what percentage of blickets do you think are red?" and answer on a sliding scale between zero and 100. In the size condition, participants were asked, "On this planet, what percentage of blickets do you think are the size shown below?" with an image of the target object they just saw available on the screen. 
+
+After completing the study, participants were asked to select which of a set of alien words they had seen previously during the study. Four were words they had seen, and four were novel lure words. Participants were dropped from further analysis if they did not respond to at least 6 of these 8 correctly (above chance performance as indicated by a one-tailed binomial test at the $p = .05$ level). This resulted in excluding XX participants, leaving XX for further analysis.  
+
+## Results
+
+We analyzed participants' judgments of the prevalence of the target object's critical feature in its category. We began by fitting a maximum mixed-effects linear model: effects utterance type (adjective or no adjective), context type (within category, between category, or same feature), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, and fixed effects were removed if they did not improve model fit (XXX CHECK THIS). The final model revealed a significant effect of utterance type ($\beta_{adjective} =$ `r e2_adj_estimate`, $t =$ `r e2_adj_statistic`, $p$ `r e2_adj_p.value`), such that prevalence judgments were lower when an adjective was used than when it was not. Participants also made lower prevalence judgments in the same-feature context type relative to within-category context type ($\beta_{same} =$ `r e2_search_same_estimate`, $t =$ `r e2_search_same_statistic`, $p =$ `r e2_search_same_p.value`), but there was no significant effect of between-category relative to within-category contexts ($\beta_{between} =$ `r e2_search_different_estimate`, $t =$ `r e2_search_different_statistic`, $p =$ `r e2_search_different_p.value`). There was not a significant interaction between context and presence of an adjective in the utterance ($\beta_{same*adjective} =$ `r e2_adj_same_estimate`, $t =$ `r e2_adj_same_statistic`, $p = $ `r e2_adj_same_p.value`; $\beta_{between*adjective} =$ `r e2_adj_diff_estimate`, $t =$ `r e2_adj_diff_statistic`, $p =$ `r e2_adj_diff_p.value`). That is, participants slightly adjusted their inferences according to the object context, though not in a way that depended on whether an adjective was used in the utterance. However, they robustly inferred that described features were less prevalent in the target’s category than unmentioned features.  
+
+## Discussion
+
+Description is often used not to distinguish among present objects, but to pick out an object's feature as atypical of its category. In Experiment 2, we asked whether people would infer that a described feature is atypical of a novel category after hearing it mentioned in an exchange. We find that people robustly inferred that a mentioned feature was atypical of its category, across both size and color description. Further, participants did not use object context to substantially explain away description. That is, when description was necessary to distinguish among present objects (e.g., there were two same-shaped objects that differed only in the mentioned feature), participants still inferred that the feature was atypical of its category.
+
+[add paragraph about diff in color/size asymmetry between exps 1 and 2, people tracking production norms on the level of the type of contrast set]
+
+## Model 2
+
+To allow the Rational Speech Act Framework to capture inferences about typicality, we modified the Speaker's utility function to have an additional term: the listener's expected processing difficulty. Speakers may be motivated to help listeners to select the correct referent not just eventually but as quickly as possible. People are both slower and less accurate at identifying atypical members of a category as members of that category [@rosch_structural_1976, @dale_graded_2007]. If speakers account for listeners' processing difficulties, they should be unlikely to produce bare nouns to refer to low typicality exemplars (e.g. unlikely to call a yellow tomato "tomato"). This is roughly the kind of inference encoded in @degen_when_2020's continuous semantics Rational Speech Act model. 
+
+We model the speaker as reasoning about the listener's label verification process. Because the speed of verification scales with the typicality of a referent, a natural way of modeling it is as process of searching for that particular referent in the set of all exemplars of the named category, or alternatively of sampling that particular referent from the set of all exemplars in that category $P\left(r \vert Cat\right)$. On this account, speakers want to provide a modifying adjective for atypical referents because the probability of sampling them from their category is low, but the probability of sampling of them from the modified category is much higher ^[This is a generalization of @xu2007's size principle to categories where exemplars are not equally likely.]
+
+```{r}
+# (e.g., $P\left(\text{yellow_tomato_i} \vert \text{tomatoes}\right) < P\left(\text{yellow_tomato_i} \vert \text{yellow_tomatoes}\right)$)
+```
+
+If speakers use this utility function, listeners who do not know the feature distribution for a category can use speakers' production to infer it. Intuitively, speakers should prefer not to modify nouns with adjectives because they incur a cost for producing that adjective. If they did, it must be because they thought the learner would have a difficult time finding the referent from a bare noun alone because of typicality. To infer the true prevalence of the target feature in the category, learners combine the speaker's utterance with their prior beliefs about the prevalence distribution. We model the listener's prior about the prevalance of features in any category as a $\text{Beta}$ distribution with two parameters $\alpha$ and $\beta$ that encode the number of hypothesized prior psuedo-exemplars with the feature and without feature that the learner has previously observed (e.g. one red dax and one blue dax). We assume that the learner believes they have previously observed 1 hypothetical psuedo-examplar of each type, which is a weak symmetric prior indicating that the learner expects features to occur in half of all members of a category on average, but would find many levels of prevalence reasonably unsurprising. To model the learner's direct experience with the category, we add the observed instances in the experiment to these hypothesized prior instance. After observing one memember of the target category with the relevant feature and one without, the listeners prior is thus updated to be $\text{Beta}\left(2,\,2\right)$.
+
+```{r e2-webppl-markedness, eval = FALSE}
+markedness_utterances <- tibble(utterance = c("toma", "red toma"),
+                                utterance_num = as.character(1:2))
+
+markedness_inference <- map_dfr(markedness_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/markedness.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(markedness_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble() %>%
+  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")))
+
+write_csv(markedness_inference, here("webppl/model_estimates/markedness.csv"))
+```
+
+```{r load-e2-webppl-markedness}
+markedness_inference <- read_csv(here("webppl/model_estimates/markedness.csv"),
+                                 show_col_types = FALSE)
+```
+
+```{r summarise-markedness}
+markedness_means <- markedness_inference %>%
+  group_by(utterance) %>%
+  summarise(value = mean(value))
+```
+
+```{r e2-markedness, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", fig.cap = "Model estimates of typicality judgments for one object seen alone and labeled either [noun] or [adjective noun]."}
+ggplot(markedness_inference, aes(x = utterance, y = value)) + 
+  geom_violin() +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_crossbar(aes(ymin = value, ymax = value, y = value), 
+                data = markedness_means, size = .5) + 
+  labs(x = "utterance", y = "proportion of [nouns] that are [adjective]")
+```
+
+
+```{r estimate-e2-params, eval = FALSE}
+e2_estimation_data <- e2_subj_data %>%
+  select(searchtype, adjective, condition, percentage) %>%
+  mutate(utt = if_else(adjective == "adjective noun", "red toma", "toma")) %>%
+  rowwise() %>%
+  mutate(p = min(max(percentage, 1),99)) %>%
+  ungroup()
+
+e2_size_estimation_data <- e2_estimation_data %>%
+  filter(condition == "size") 
+
+e2_color_estimation_data <- e2_estimation_data %>%
+  filter(condition == "color") 
+
+e2_size_parameter <- webppl(program_file =
+                           here("webppl/infer_e2_params.wppl"), 
+                          data = e2_size_estimation_data,
+                          data_var = "empiricalData") %>%
+  as_tibble() %>%
+  mutate(parameter = "size")
+
+e2_color_parameter <- webppl(program_file =
+                           here("webppl/infer_e2_params.wppl"), 
+                          data = e2_color_estimation_data, 
+                          data_var = "empiricalData") %>%
+  as_tibble() %>%
+  mutate(parameter = "color")
+
+e2_parameters <- e2_size_parameter %>%
+  bind_rows(e2_color_parameter)
+
+write_csv(e2_parameters, here("webppl/model_parameters/e2_parameters.csv"))
+```
+
+```{r load-e2-params}
+e2_parameters <- read_csv(here("webppl/model_parameters/e2_parameters.csv"),
+                          show_col_types = FALSE)
+```
+
+```{r summarise-e2-params}
+e2_parameter_means <- e2_parameters %>%
+  group_by(parameter) %>%
+  summarise(mean = mean(value),
+            ci_upper = quantile(value, .975),
+            ci_lower = quantile(value, .025))
+
+ggplot(e2_parameters, aes(x = value, fill = parameter)) +
+  facet_grid(parameter ~ .) +
+  geom_histogram() + 
+  theme(legend.position = c(.8, .8))
+```
+
+```{r e2-empirical, eval = FALSE}
+e2_utterances <- expand_grid(utterance = c("toma", "red toma"),
+                             type = c("contrast", "same", "different"),
+                             parameter = c("size", "color")) %>%
+  mutate(utterance_num = if_else(utterance == "toma", 1, 2)) %>%
+  left_join(e1_parameter_means, by = "parameter")
+ 
+
+e2_inference <- e2_utterances %>%
+  group_by(utterance_num, parameter, type) %>%
+  nest() %>%
+  mutate(model_output = map(data, ~webppl(program_file =
+                                         here(glue("webppl/e2_{type}_empirical.wppl")),
+                                       data = .x))) %>%
+  select(-data) %>%
+  unnest(cols = c(model_output)) %>%
+  left_join(e2_utterances, by = c("utterance_num", "type", "parameter")) %>%
+  ungroup() %>%
+  select(-utterance_num) %>%
+  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
+         utterance = factor(utterance, 
+                            levels = c("noun", "adjective noun")))
+  
+write_csv(e2_inference, here("webppl/model_estimates/e2_estimates.csv"))
+```
+
+```{r load-e2-estimates}
+e2_inference <- read_csv(here("webppl/model_estimates/e2_estimates.csv"), 
+                         show_col_types = FALSE)
+```
+
+```{r summarise-e2-estimates}
+e2_inference_means <- e2_inference %>%
+  pivot_wider(names_from = Parameter, values_from = value) %>%
+  mutate(p = as.numeric(p)) %>%
+  filter(obj == "red toma") %>%
+  group_by(utterance, type, parameter) %>%
+  summarise(p = mean(p))
+```
+
+```{r e2-wppl-plot, eval = FALSE}
+e2_wppl_data <- e2_inference_means %>%
+  mutate(p = 100 * p) %>%
+  rename(empirical_stat = p, adjective = utterance,
+         searchtype = type, condition = parameter)
+
+ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat, 
+                         color = searchtype, fill = searchtype)) + 
+  facet_wrap(~ condition) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
+                  position = position_dodge(.5)) + 
+  theme(legend.position = "top") + 
+  geom_col(data = e2_wppl_data, width = .5, 
+           position = position_dodge(.5), alpha = .5) + 
+  geom_hline(aes(yintercept = 50), linetype = "dashed")
+```
+
+```{r joint-inference, eval = FALSE}
+joint_utterances <- tibble(utterance = c("toma", "blue toma"),
+                                utterance_num = as.character(1:2))
+
+joint_inference <- map_dfr(joint_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/two_world_typicality.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(joint_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble()
+```
+
+```{r joint-analysis, eval = FALSE}
+joint_data <- joint_inference %>%
+  pivot_wider(names_from = "Parameter") %>%
+  mutate(chosen = case_when(world == "two toma" ~ 
+                           gsub("toma", "pair", obj),
+                         world == "two dax" ~ 
+                           gsub("toma", "single", obj))) %>%
+  mutate(p = as.numeric(p),
+         utterance = factor(utterance, 
+                            levels = c("toma", "blue toma")))
+
+joint_data_obj <- joint_data %>%
+  group_by(utterance, chosen) %>%
+  count() %>%
+  group_by(utterance) %>%
+  mutate(prob = n/sum(n))
+
+ggplot(joint_data_obj, aes(x = chosen, y = prob, fill = chosen)) + 
+  geom_col(position = "dodge") + 
+  facet_wrap(~ utterance) + 
+  scale_fill_ptol(drop = FALSE) +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(x = "", y = "selection probability")
+
+ggplot(joint_data, aes(x = p, y = chosen)) +
+  facet_wrap(~ utterance) +
+  stat_density_ridges(scale = 1, 
+                      quantile_lines = TRUE, quantiles = 2) + 
+  scale_fill_ptol() +
+  scale_x_continuous(limits = c(0, 1)) +
+  labs(y = "object chosen", x = "proportion of tomas that are blue")
+
+
+joint_data_subset <- joint_data %>%
+  filter(!utterance %in% c("red dax"), chosen == "blue pair") %>%
+  group_by(utterance, chosen) %>%
+  summarise(p = mean(p)) %>%
+  spread(utterance, p)
+
+```
+
+## Discussion
