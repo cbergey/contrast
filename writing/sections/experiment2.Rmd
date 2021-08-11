@@ -217,7 +217,7 @@ e2_utterances <- expand_grid(utterance = c("toma", "red toma"),
                              type = c("contrast", "same", "different"),
                              parameter = c("size", "color")) %>%
   mutate(utterance_num = if_else(utterance == "toma", 1, 2)) %>%
-  left_join(e1_parameter_means, by = "parameter")
+  left_join(e2_parameter_means, by = "parameter")
  
 
 e2_inference <- e2_utterances %>%
@@ -252,7 +252,7 @@ e2_inference_means <- e2_inference %>%
   summarise(p = mean(p))
 ```
 
-```{r e2-wppl-plot, eval = FALSE}
+```{r e2-wppl-plot}
 e2_wppl_data <- e2_inference_means %>%
   mutate(p = 100 * p) %>%
   rename(empirical_stat = p, adjective = utterance,
