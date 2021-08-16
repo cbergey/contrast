@@ -19,16 +19,23 @@ var contrastWorlds = [{
   string: "target world"
 }]
 
-var sameObjects = [{color: "red", shape: "toma", string: "red toma"},
+var sameObjects1 = [{color: "red", shape: "toma", string: "red toma"},
                {color: "red", shape: "dax", string: "red dax"}]
+
+var sameObjects2 = [{color: "red", shape: "dax", string: "red dax"},
+                    {color: "red", shape: "toma", string: "red toma"}]
+
 var sameUtterances = ["toma", "dax", "red toma", "red dax"]
 
 var sameWorlds = [{
-  objects: sameObjects,
+  objects: sameObjects1,
   utterances: sameUtterances,
   string: "target world"
+}, {
+  objects: sameObjects2,
+  utterances: sameUtterances,
+  string: "lure world"
 }]
-
 
 var differentObjects1 = [{color: "red", shape: "toma", string: "red toma"},
               {color: "blue", shape: "dax", string: "blue dax"}]
