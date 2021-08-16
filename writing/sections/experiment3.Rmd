@@ -180,15 +180,16 @@ e3_wppl_data <- e2_wppl_data %>%
   bind_rows(e3_wppl_null_data) %>%
   filter(searchtype != "same")
 
-ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat, 
+ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat - 50, 
                          color = searchtype, fill = searchtype)) + 
   facet_wrap(~ condition) +
-  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
+  geom_pointrange(aes(ymin = ci_lower - 50, ymax = ci_upper - 50), 
                   position = position_dodge(.5)) + 
   theme(legend.position = "top") + 
   geom_col(data = e3_wppl_data, width = .5, 
            position = position_dodge(.5), alpha = .5) + 
-  geom_hline(aes(yintercept = 50), linetype = "dashed")
+  geom_hline(aes(yintercept = 0), linetype = "dashed") +
+  scale_y_continuous(labels = function(y) y + 50, limits = c(-50,50))
 
 ```
 
