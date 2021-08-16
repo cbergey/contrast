@@ -178,10 +178,12 @@ size_only_model <- e3_model_data %>%
 ```{r e3-wppl-plot, eval = FALSE}
 e3_wppl_data <- e2_wppl_data %>%
   bind_rows(e3_wppl_null_data) %>%
-  filter(searchtype != "same")
+  filter(searchtype != "same") %>%
+   mutate(adjective = factor(adjective, levels = c("noun", "adjective noun", "alien utterance")),
+         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
 
-ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat, 
-                         color = searchtype, fill = searchtype)) + 
+ggplot(e3_mean_data, aes(x = searchtype, y = empirical_stat, 
+                         color = adjective, fill = adjective)) + 
   facet_wrap(~ condition) +
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
                   position = position_dodge(.5)) + 

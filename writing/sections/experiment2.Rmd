@@ -119,7 +119,7 @@ We model the speaker as reasoning about the listener's label verification proces
 # (e.g., $P\left(\text{yellow_tomato_i} \vert \text{tomatoes}\right) < P\left(\text{yellow_tomato_i} \vert \text{yellow_tomatoes}\right)$)
 ```
 
-If speakers use this utility function, listeners who do not know the feature distribution for a category can use speakers' production to infer it. Intuitively, speakers should prefer not to modify nouns with adjectives because they incur a cost for producing that adjective. If they did, it must be because they thought the learner would have a difficult time finding the referent from a bare noun alone because of typicality. To infer the true prevalence of the target feature in the category, learners combine the speaker's utterance with their prior beliefs about the prevalence distribution. We model the listener's prior about the prevalance of features in any category as a $\text{Beta}$ distribution with two parameters $\alpha$ and $\beta$ that encode the number of hypothesized prior psuedo-exemplars with the feature and without feature that the learner has previously observed (e.g. one red dax and one blue dax). We assume that the learner believes they have previously observed 1 hypothetical psuedo-examplar of each type, which is a weak symmetric prior indicating that the learner expects features to occur in half of all members of a category on average, but would find many levels of prevalence reasonably unsurprising. To model the learner's direct experience with the category, we add the observed instances in the experiment to these hypothesized prior instance. After observing one memember of the target category with the relevant feature and one without, the listeners prior is thus updated to be $\text{Beta}\left(2,\,2\right)$.
+If speakers use this utility function, listeners who do not know the feature distribution for a category can use speakers' production to infer it. Intuitively, speakers should prefer not to modify nouns with adjectives because they incur a cost for producing that adjective. If they did, it must be because they thought the learner would have a difficult time finding the referent from a bare noun alone because of typicality. To infer the true prevalence of the target feature in the category, learners combine the speaker's utterance with their prior beliefs about the prevalence distribution. We model the listener's prior about the prevalance of features in any category as a $\text{Beta}$ distribution with two parameters $\alpha$ and $\beta$ that encode the number of hypothesized prior psuedo-exemplars with the feature and without feature that the learner has previously observed (e.g. one red dax and one blue dax). We assume that the learner believes they have previously observed 1 hypothetical psuedo-examplar of each type, which is a weak symmetric prior indicating that the learner expects features to occur in half of all members of a category on average, but would find many levels of prevalence reasonably unsurprising. To model the learner's direct experience with the category, we add the observed instances in the experiment to these hypothesized prior instance. After observing one member of the target category with the relevant feature and one without, the listeners prior is thus updated to be $\text{Beta}\left(2,\,2\right)$.
 
 ```{r e2-webppl-markedness, eval = FALSE}
 markedness_utterances <- tibble(utterance = c("toma", "red toma"),
@@ -174,22 +174,22 @@ e2_size_estimation_data <- e2_estimation_data %>%
 e2_color_estimation_data <- e2_estimation_data %>%
   filter(condition == "color") 
 
-e2_size_parameter <- webppl(program_file =
+e2_size_parameter_samples <- webppl(program_file =
                            here("webppl/infer_e2_params.wppl"), 
                           data = e2_size_estimation_data,
                           data_var = "empiricalData") %>%
   as_tibble() %>%
   mutate(parameter = "size")
 
-e2_color_parameter <- webppl(program_file =
+e2_color_parameter_samples <- webppl(program_file =
                            here("webppl/infer_e2_params.wppl"), 
                           data = e2_color_estimation_data, 
                           data_var = "empiricalData") %>%
   as_tibble() %>%
   mutate(parameter = "color")
 
-e2_parameters <- e2_size_parameter %>%
-  bind_rows(e2_color_parameter)
+e2_parameters <- e2_size_parameter_samples %>%
+  bind_rows(e2_color_parameter_samples)
 
 write_csv(e2_parameters, here("webppl/model_parameters/e2_parameters.csv"))
 ```
@@ -199,18 +199,28 @@ e2_parameters <- read_csv(here("webppl/model_parameters/e2_parameters.csv"),
                           show_col_types = FALSE)
 ```
 
-```{r summarise-e2-params}
+```{r summarize-e2-params}
 e2_parameter_means <- e2_parameters %>%
   group_by(parameter) %>%
   summarise(mean = mean(value),
             ci_upper = quantile(value, .975),
             ci_lower = quantile(value, .025))
 
+e2_color_parameter <- e2_parameter_means %>%
+  filter(parameter == "color")
+
+e2_size_parameter <- e2_parameter_means %>%
+  filter(parameter == "size")
+```
+
+```{r plot-e2-params, eval = FALSE}
 ggplot(e2_parameters, aes(x = value, fill = parameter)) +
   facet_grid(parameter ~ .) +
   geom_histogram() + 
   theme(legend.position = c(.8, .8))
 ```
+
+As in Experiment 1, we used Empirical Bayesian methods to estimate the rationality parameter that experimental participants are using to draw inferences about speakers in both the color and size conditions. In contrast to Experiment 1 the absolute values of these parameters are driven largely by the number of pseudo-exemplars assumed by the listener prior to exposure. Thus, the values inferred in the two experiments are not directly comparable. However, differences between color and size can be interpreted in the same way. As in Experiment 1, we found that listeners inferred speakers to be more rational when using size adjectives `r e2_size_parameter$mean` [`r e2_size_parameter$ci_lower`, `r e2_color_parameter$ci_upper`] than color adjectives `r e2_size_parameter$mean` [`r e2_color_parameter$ci_lower`, `r e2_color_parameter$ci_upper`], but the two inferred confidence intervals were overlapping suggesting that people treated the adjectives as more similar to each-other. 
 
 ```{r e2-empirical, eval = FALSE}
 e2_utterances <- expand_grid(utterance = c("toma", "red toma"),
@@ -246,7 +256,7 @@ e2_inference <- read_csv(here("webppl/model_estimates/e2_estimates.csv"))
 e2_inference_means <- e2_inference %>%
   pivot_wider(names_from = Parameter, values_from = value) %>%
   mutate(p = as.numeric(p)) %>%
-  filter(obj == "red toma") %>%
+  filter(obj == "red toma", world == "target world") %>%
   group_by(utterance, type, parameter) %>%
   summarise(p = mean(p))
 ```
@@ -255,10 +265,12 @@ e2_inference_means <- e2_inference %>%
 e2_wppl_data <- e2_inference_means %>%
   mutate(p = 100 * p) %>%
   rename(empirical_stat = p, adjective = utterance,
-         searchtype = type, condition = parameter)
+         searchtype = type, condition = parameter) %>%
+  mutate(adjective = factor(adjective, levels = c("noun", "adjective noun")),
+         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
 
-ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat - 50, 
-                         color = searchtype, fill = searchtype)) + 
+ggplot(e2_mean_data, aes(x = searchtype, y = empirical_stat - 50, 
+                         color = adjective, fill = adjective)) + 
   facet_wrap(~ condition) +
   geom_pointrange(aes(ymin = ci_lower - 50, ymax = ci_upper - 50), 
                   position = position_dodge(.5)) + 
@@ -266,9 +278,15 @@ ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat - 50,
   geom_col(data = e2_wppl_data, width = .5, 
            position = position_dodge(.5), alpha = .5) + 
   geom_hline(aes(yintercept = 0), linetype = "dashed") +
-  scale_y_continuous(labels = function(y) y + 50, limits = c(-50,50))
+  scale_y_continuous(labels = function(y) y + 50, limits = c(-15,15))
 
 ```
+
+Figure \ref{fig: e2-webppl-plot} shows the predictions of our Rational Speech Act model for comparison with empirical data from people. The model captures the trends in the data correctly, inferring that the target object is more than 50% likely to be the target color if no adjective is used to refer to it (e.g. "dax"), but less than 50% likely to be the target color if it is referred to with an adjective (e.g. "red dax"). The model also infers the prevalence of the target color to be numerically more likely in the contrast condition, like people do. That is, in the contrast condition when an adjective is used to distinguish between referents, the model thinks that the target color is less atypical. When an adjective would be useful to distinguish between two objects of the same shape but one is not used, the model infers that the color of the target object is more prevalent. 
+
+## Discussion
+
+In contrast to the potential lay intuition that these two kinds of inferences trade off--that is, adjectives are used either for reference or marking typicality but not both, the model captures the graded way in which people interpolate between them. When adjective is helpful for reference, whether it is used or not makes both the model and people give it slightly less weight in inferring the typical features of the target object, but the weight is still significant. Our model's explanation for this is that while people choose their language in order to refer successfully, their choices also reflect their knowledge of features of those objects. In the model as constructed, we cannot distinguish between listener and speaker design explanation for the impact of feature knowledge. One possibility is that the pressure from this feature knowledge is communicative as well speakers could be intentionally transmitting information to the listener about the typical features of their intended referent. Alternatively, the influence of this feature knowledge could be unintentional, driven by pressures from the speaker's semantic representation. We consider these implications more fully in the General Discussion below. In either case, listeners can leverage the impact of speakers' feature knowledge on their productions in order to infer the typical features of the objects they are talking about, even if this is their first exposure to these novel objects.
 
 ```{r joint-inference, eval = FALSE}
 joint_utterances <- tibble(utterance = c("toma", "blue toma"),
@@ -325,5 +343,3 @@ joint_data_subset <- joint_data %>%
   spread(utterance, p)
 
 ```
-
-## Discussion
