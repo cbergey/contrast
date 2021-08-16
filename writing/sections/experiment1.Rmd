@@ -365,6 +365,13 @@ e1_parameter_means <- e1_parameters %>%
             ci_upper = quantile(value, .975),
             ci_lower = quantile(value, .025))
 
+e1_color_parameter <- e1_parameter_means %>% 
+  filter(parameter == "color")
+
+e1_size_parameter <- e1_parameter_means %>% 
+  filter(parameter == "size")
+
+
 # ggplot(e1_parameters, aes(x = value, fill = parameter)) +
 #   geom_histogram(alpha = .5) + 
 #   theme(legend.position = c(.8, .8))
@@ -413,7 +420,8 @@ e1_webppl_data <- e1_mean_data %>%
   rename(utterance = adjective_used) %>%
   left_join(two_world_inference, by = c("utterance", "item" = "obj", 
                                         "condition" = "parameter")) %>%
-  mutate(prob_min = prob, prob_max = prob)
+  mutate(utterance = factor(utterance, levels = c("noun", "adjective noun")),
+         prob_min = prob, prob_max = prob)
 ```
 
 ```{r e1-webppl-plot, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", fig.cap = "Proportion of times that people (and our model) chose the target and lure items as a function of adjective type and whether an adjective was provided. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid lines show model predictions."}
@@ -428,6 +436,13 @@ ggplot(e1_webppl_data, aes(x = utterance, color = item, fill = item)) +
   theme(legend.position = "right")
 ```
 
-Because the model we described has no way of distinguishing between color and size adjectives, making the same predictions for both. Based on our pilot studies, we pre-registered and observed an asymmetry in which contrastive inferences would be stronger for size than color. Why do we see an asymmetry in people? One possibility is that the semantics of color and size work differently. A recent model from @degen_when_2020 does predict a color--size asymmetry based on different semantic exactness. In this model, literal semantics are treated as continuous rather than discrete, so "blue" is neither 100% true or 100% false of a particular object, but can instead be 90% true. They successfully model a number of color--size asymmetries by treating color as having stronger literal semantics (i.e. "blue dax" is a better description of a small blue dax than "small dax" is). However, this model predicts the opposite asymmetry of what we found. Because color has stronger semantics than size, listeners show a stronger contrast effect for color than size. We show this effect in appendix A. Thus, though a continuous semantics can explain our asymmetry, this explanation is unlikely given the continuous semantics that predicts other empirical color--size asymmetries does not predict our findings.
+Our empirical data suggest that people treat color and size adjectives differently, making a stronger contrast inference with size than with color. One potential explanation for this difference is that people are aware of production asymmetries between color and size. As mentioned, speakers tend to over-describe color, providing more color adjectives than necessary to establish reference, while describing size more minimally [@pechmann_incremental_1989; @nadig_evidence_2002]. Listeners may be aware of this production asymmetry and discount the contrastive weight of color adjectives with respect to reference. 
 
-Another possible explanation for this asymmetry is that people are aware of production asymmetries between color and size. As mentioned, speakers tend to over-describe color, providing more color adjectives than necessary to establish reference, while describing size more minimally [@pechmann_incremental_1989; @nadig_evidence_2002]. Listeners may be aware of this production asymmetry and discount the contrastive weight of color adjectives with respect to reference. This account explains our observed color--size asymmetry but is somewhat unsatisfying, raising the question: why there is a production asymmetry in the first place? For now, we bracket this question and note that listeners in our task appropriately discount color's contrastive weight given production norms.
+In the Rational Speech Act model, this kind of difference is captured neatly by a difference in the listener's beliefs about the speaker's rationality (i.e. how sensitive the speaker is to differences in utility of different utterances). To determine the value of the rationality parameter in each condition, we used Empirical Bayesian inference to estimate the likely range of parameter values. These estimates varied substantially across conditions, with the rationality parameter in the color condition estimated to be `r e1_color_parameter$mean` with a 95% credible interval of [`r e1_color_parameter$ci_lower`, `r e1_color_parameter$ci_upper`], and the rationality parameter in the size condition estimated to be `r e1_size_parameter$mean` [`r e1_size_parameter$ci_lower`, `r e1_size_parameter$ci_upper`].
+
+Figure ~\ref{fig:e1-webppl-plot} shows the model predictions along with the empirical data from Experiment 1. The model broadly captures the contrast inference--when speakers produce an adjective noun combination like "red dax," the model selects the target object more often than the lure object. The amount to which the model makes this inference varies as predicted between the color and size adjective conditions in line with the different estimated rationality values. In both conditions, despite estimating the value of rationality that makes the observed data more likely, the model overpredicts the size of the contrastive inference that people make. Intuitively, it appears that in addition to the contrastive inference, people may have a strong tendency to choose a unique object when they hear an unmodified noun (e.g. "dax"). In an attempt to capture this uniqueness tendency, the model overpredicts the extent of the contrastive inference. 
+
+The model captures the difference between color and size in a difference in the rationality parameter, but leaves open the ultimate source of this difference in rationality. Why there is a production asymmetry in the first place? For now, we bracket this question and note that listeners in our task appropriately discount color's contrastive weight given production norms. 
+
+An alternative way to capture this preference would be to locate it in a different part of the model. One possibility is that the semantics of color and size work differently. A recent model from @degen_when_2020 does predict a color--size asymmetry based on different semantic exactness. In this model, literal semantics are treated as continuous rather than discrete, so "blue" is neither 100% true or 100% false of a particular object, but can instead be 90% true. They successfully model a number of color--size asymmetries by treating color as having stronger literal semantics (i.e. "blue dax" is a better description of a small blue dax than "small dax" is). However, this model predicts the opposite asymmetry of what we found. Because color has stronger semantics than size, listeners show a stronger contrast effect for color than size. We show this effect in appendix A. Thus, though a continuous semantics can explain our asymmetry, this explanation is unlikely given the continuous semantics that predicts other empirical color--size asymmetries does not predict our findings.
+
