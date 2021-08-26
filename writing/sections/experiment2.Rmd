@@ -78,7 +78,7 @@ If listeners do make contrastive inferences about typicality, it may not be as s
 
 In Experiment 2, we used an artificial language task to set up just this kind of learning situation. We manipulated the contexts in which listeners hear adjectives modifying novel names of novel referents. We asked whether listeners infer that these adjectives identify atypical features of the named objects, and whether the strength of this inference depends on the referential ambiguity of the context in which adjectives are used.
 
-```{r e3-aliens, fig.env = "figure", fig.pos = "H", fig.align='center', set.cap.width=T, num.cols.cap=1, fig.cap = "Experiment 2 stimuli. In the above example, the critical feature is size and the object context is a within-category contrast: the alien on the right has two same-shaped objects that differ in size."}
+```{r e3-aliens, fig.cap = "Experiment 2 stimuli. In the above example, the critical feature is size and the object context is a within-category contrast: the alien on the right has two same-shaped objects that differ in size."}
 img <- png::readPNG(here("writing/figs/e2-stimuli.png"))
 grid::grid.raster(img)
 ```
@@ -252,7 +252,8 @@ write_csv(e2_inference, here("webppl/model_estimates/e2_estimates.csv"))
 ```
 
 ```{r load-e2-estimates}
-e2_inference <- read_csv(here("webppl/model_estimates/e2_estimates.csv"))
+e2_inference <- read_csv(here("webppl/model_estimates/e2_estimates.csv"),
+                         show_col_types = FALSE)
 ```
 
 ```{r summarise-e2-estimates}
@@ -264,26 +265,38 @@ e2_inference_means <- e2_inference %>%
   summarise(p = mean(p))
 ```
 
-```{r e2-wppl-plot}
+```{r e2-wppl-plot, fig.cap = "Model predictions for Experiment 2."}
 e2_wppl_data <- e2_inference_means %>%
   mutate(p = 100 * p) %>%
   rename(empirical_stat = p, adjective = utterance,
          searchtype = type, condition = parameter) %>%
   mutate(adjective = factor(adjective, levels = c("noun", "adjective noun")),
          searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
+# 
+# ggplot(e2_mean_data, aes(x = searchtype, y = empirical_stat - 50, 
+#                          color = adjective, fill = adjective)) + 
+#   facet_wrap(~ condition) +
+#   geom_pointrange(aes(ymin = ci_lower - 50, ymax = ci_upper - 50), 
+#                   position = position_dodge(.5)) + 
+#   theme(legend.position = "top") + 
+#   geom_col(data = e2_wppl_data, width = .5, 
+#            position = position_dodge(.5), alpha = .5) + 
+#   geom_hline(aes(yintercept = 0), linetype = "dashed") +
+#   scale_y_continuous(labels = function(y) y + 50, limits = c(-15,15))
 
-ggplot(e2_mean_data, aes(x = searchtype, y = empirical_stat - 50, 
-                         color = adjective, fill = adjective)) + 
-  facet_wrap(~ condition) +
-  geom_pointrange(aes(ymin = ci_lower - 50, ymax = ci_upper - 50), 
+ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat, 
+                         color = condition, fill = condition)) + 
+  facet_wrap(~ searchtype) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
                   position = position_dodge(.5)) + 
   theme(legend.position = "top") + 
-  geom_col(data = e2_wppl_data, width = .5, 
-           position = position_dodge(.5), alpha = .5) + 
-  geom_hline(aes(yintercept = 0), linetype = "dashed") +
-  scale_y_continuous(labels = function(y) y + 50, limits = c(-15,15))
+  geom_crossbar(aes(ymin = empirical_stat, ymax = empirical_stat, y = empirical_stat),
+                position = position_dodge(.5), width = .5,
+           alpha = .5, size = .5, data = e2_wppl_data) + 
+  geom_hline(aes(yintercept = 50), linetype = "dashed") 
 
 ```
+
 
 Figure \ref{fig: e2-wppl-plot} shows the predictions of our Rational Speech Act model compared to empirical data from participants. The model captures the trends in the data correctly, inferring that the critical feature was less prevalent in the category if it is referred to with an adjective (e.g., "red dax") than if it was not mentioned (e.g., "dax"). The model also infers the prevalence of the critical feature to be numerically more likely in the contrast condition, like people do. That is, in the contrast condition when an adjective is used to distinguish between referents, the model thinks that the target color is slightyly less atypical. When an adjective would be useful to distinguish between two objects of the same shape but one is not used, the model infers that the color of the target object is more prevalent. 
 

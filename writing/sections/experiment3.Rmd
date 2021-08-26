@@ -1,7 +1,7 @@
 # Experiment 3
 
 ```{r e3-read-data}
-e3_data <- read_csv(here("data/exp3_turk_data.csv"))
+e3_data <- read_csv(here("data/exp3_turk_data.csv"), show_col_types = FALSE)
 
 # participants who have unbalanced numbers of trials in each condition
 e3_exclude <- e3_data %>% count(subid, utttype, searchtype) %>% filter(n == 2 | n == 3)
@@ -28,12 +28,15 @@ e3_subj_data <- e3_data %>%
          adjective = if_else(adjective == "noutt", "alien utterance", adjective),
          adjective = if_else(adjective == "noadj", "noun", adjective),
          adjective = factor(adjective, levels = c("noun", "adjective noun", "alien utterance")),
-         searchtype = factor(searchtype, levels = c("contrast", "different")))
+         searchtype = factor(searchtype, levels = c("contrast", "different")),
+         condition = factor(condition, levels = c("color", "size")))
 
 e3_mean_data <- e3_subj_data %>%
   group_by(searchtype, adjective, condition) %>%
   tidyboot_mean(percentage)
+```
 
+```{r e3-lmer-models, eval = FALSE}
 e3_model <- lmer(percentage ~ condition * adjective * searchtype +
                 (adjective | subid),
               control = lmerControl(optimizer = "bobyqa"),
@@ -44,7 +47,6 @@ e3_model <- lmer(percentage ~ condition * adjective * searchtype +
 
 
 In Experiments 1 and 2, we established that people can use contrastive inferences to resolve referential ambiguity and to make inferences about the feature distribution of a novel category. Additionally, in Experiment 2, we found that these two inferences do not seem to trade off substantially: even if an adjective is necessary to establish reference, people infer that it also marks atypicality. We also found that inferences of atypicality about color and size adjectives pattern very similarly, though their baseline typicality is shifted, while color and size are not equally contrastive with respect to referential disambiguation.
-
 
 To strengthen our findings in a way that would allow us to better detect potential trade-offs between these two types of inference, here we replicate Experiment 2 in a larger sample of participants.  [ some explanation of why the new control condition is interesting as well ...]
 
@@ -60,32 +62,11 @@ The stimuli and procedure were identical to those of Experiment 2, with the foll
 
 After completing the study, participants were asked to select which of a set of alien words they had seen previously during the study. Four were words they had seen, and four were novel lure words. Participants were dropped from further analysis if they did not respond to at least 6 of these 8 correctly (above chance performance as indicated by a one-tailed binomial test at the $p = .05$ level). Additionally, six participants were excluded because their trial conditions were not balanced due to an error in the run of the experiment. This resulted in excluding XX participants, leaving XX for further analysis.  
 
-```{r mean-data}
-means <- e2_subj_data %>%
-  group_by(condition, adjective, searchtype, subid) %>%
-  gather(measure, value, percentage, log_rt) %>%
-  group_by(condition, adjective, searchtype, measure, subid) %>%
-  summarise(value = mean(value)) %>%
-  tidyboot_mean(value)
-```
-
-```{r meanplotinference, fig.env = "figure", fig.width=8, fig.cap="The proportion of the novel category participants judged to have the feature of the target object, by condition. The left panel shows judgments on trials in which no adjective was used in the referring expression (e.g., 'Pass me the blicket'), and the right panel shows judgments on trials in which an adjective was used (e.g., 'Pass me the [purple/small] blicket'). This is crossed by the type of object context (contrast, different, same) on the x-axis."}
-ggplot(filter(means, measure == "percentage"),
-       aes(x = adjective, color = condition)) + 
-  facet_wrap(~searchtype) + 
-  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
-                      position = position_dodge(.5)) +
-  ylab("Prevalence judgment") +
-  xlab("Context type") +
-  theme(text = element_text(size=20)) +
-  scale_color_ptol()
-```
-
+## Results
 
 
 ```{r e3-models}
 # all prereg'd models below
-
 e3_utt_model_no_alien <- e3_model_data %>%
   filter(utttype != "noutt") %>%
   mutate(utttype = factor(utttype, levels = c("noadj", "adj"))) %>%
@@ -135,25 +116,7 @@ make_text_vars(e3_full_model_no_alien, "e3_noalien_adj", "utttypeadj")
 
 ```
 
-```{r e3-rsa, eval = FALSE}
-e3_null_inference <- webppl(program_file = 
-                                         here("webppl/e3_null.wppl"))
-
-e3_wppl_null_data <- e3_null_inference %>%
-  pivot_wider(values_from = "value", names_from = "Parameter") %>%
-  mutate(p = as.numeric(p)) %>%
-  group_by(obj) %>%
-  summarise(p = 100 * mean(p)) %>%
-  filter(obj == "red toma") %>%
-  rename(empirical_stat = p) %>%
-  mutate(adjective = "alien utterance") %>%
-  select(-obj) %>%
-  expand_grid(condition = c("color", "size"),
-              searchtype = c("different", "contrast"))
-  
-```
-
-```{r extra-models}
+```{r extra-models, eval = FALSE}
 no_baseline_model <- e3_model_data %>%
   filter(utttype != "noutt") %>%
   lmer(percentage ~ utttype + searchtype  + condition + 
@@ -175,34 +138,58 @@ size_only_model <- e3_model_data %>%
 
 ```
 
-```{r e3-wppl-plot, eval = FALSE}
-e3_wppl_data <- e2_wppl_data %>%
-  bind_rows(e3_wppl_null_data) %>%
-  filter(searchtype != "same") %>%
-   mutate(adjective = factor(adjective, levels = c("noun", "adjective noun", "alien utterance")),
-         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
-
-
-ggplot(e3_mean_data, aes(x = searchtype, y = empirical_stat, 
-                         color = adjective, fill = adjective)) + 
-  facet_wrap(~ condition) +
-  geom_pointrange(aes(ymin = ci_lower - 50, ymax = ci_upper - 50), 
-                  position = position_dodge(.5)) + 
-  theme(legend.position = "top") + 
-  geom_col(data = e3_wppl_data, width = .5, 
-           position = position_dodge(.5), alpha = .5) + 
-  geom_hline(aes(yintercept = 0), linetype = "dashed") +
-  scale_y_continuous(labels = function(y) y + 50, limits = c(-50,50))
-
-```
-
-## Results
-
 We began by fitting a pre-registered maximum mixed-effects linear model: effects utterance type (alien utterance, adjective, or no adjective; alien utterance as reference level), context type (within category or between category), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, which resulted in a model with all fixed effects, all interactions and a random slope of utterance type by subject. The final model revealed a significant effect of the no adjective utterance type compared to the alien utterance type ($\beta =$ `r e3_full_noadj_estimate`, $t =$ `r e3_full_noadj_statistic`, $p =$ `r e3_full_noadj_p.value`) and a marginal effect of the adjective utterance type compared to the alien utterance type ($\beta =$ `r e3_full_adj_estimate`, $t =$ `r e3_full_adj_statistic`, $p =$ `r e3_full_adj_p.value`). The effects of context type and adjective type were not significant ($\beta_{between} =$ `r e3_full_diffshapes_estimate`, $t_{between} =$ `r e3_full_diffshapes_statistic`, $p_{between} =$ `r e3_full_diffshapes_p.value`; $\beta_{size} =$ `r e3_full_size_estimate`, $t_{size} =$ `r e3_full_size_statistic`, $p_{size} =$ `r e3_full_size_p.value`), and there was a significant interaction between the adjective utterance type and the size condition ($\beta =$ `r e3_full_adj_size_estimate`, $t =$ `r e3_full_adj_size_statistic`, $p =$ `r e3_full_adj_size_p.value`). Thus, participants inferred that an object referred to in an intelligible utterance with no description was more typical of its category on the target feature than an object referred to with an alien utterance. They also inferred that an object referred to in an intelligible utterance with description was marginally less typical than an object referred to with an alien utterance, and this effect was slightly stronger in the size condition. They did not substantially adjust their inferences based on the object context.
 
 Given that interpretation of these results with respect to the alien utterance condition can be difficult, we pre-registered a version of the same full model excluding alien utterance trials. This model revealed a significant effect of utterance type: participants' prevalence judgments were lower when an adjective was used than when it was not ($\beta =$ `r e3_noalien_adj_estimate`, $t =$ `r e3_noalien_adj_statistic`, $p =$ `r e3_noalien_adj_p.value`). No other effects were significant. This replicates the main effect of interest in Experiment 2: that when an adjective is used in referring to the object, participants infer that the described feature is less typical of that object's category than when the feature goes unmentioned. 
 
 
+```{r e3-rsa, eval = FALSE}
+e3_null_inference <- webppl(program_file = 
+                                         here("webppl/e3_null.wppl"))
+write_csv(e3_null_inference, 
+          here("webppl/model_estimates/e3_null_estimates.csv"))
+```
+
+```{r load-e3-estimates}
+e3_null_inference <- 
+  read_csv(here("webppl/model_estimates/e3_null_estimates.csv"),
+           show_col_types = FALSE)
+```
+
+```{r e3-wppl-data}
+e3_wppl_null_data <- e3_null_inference %>%
+  pivot_wider(values_from = "value", names_from = "Parameter") %>%
+  mutate(p = as.numeric(p)) %>%
+  group_by(obj) %>%
+  summarise(p = 100 * mean(p)) %>%
+  filter(obj == "red toma") %>%
+  rename(empirical_stat = p) %>%
+  mutate(adjective = "alien utterance") %>%
+  select(-obj) %>%
+  expand_grid(condition = c("color", "size"),
+              searchtype = c("different", "contrast"))
+
+e3_wppl_data <- e2_wppl_data %>%
+  bind_rows(e3_wppl_null_data) %>%
+  filter(searchtype != "same") %>%
+   mutate(adjective = factor(adjective, levels = c("noun", "adjective noun", "alien utterance")),
+         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
+```
+
+To validate the model we developed for Experiment 2, we compared its estimates using the previously fit parameters to the new data for Experiment 3. As show in Figure \ref{fig:e3-wppl-plot}, the model predictions were well aligned with peoples' prevalence judgments. In addition, in Experiment 2, we fixed the model's prior beliefs about the prevalence of the target object's color or size to be centered at 50% because the model had seen one pseudo-exemplar of the target color/size, and on psuedo-exemplar of the non-target color/size. In Experiment 3, we aimed to estimate this prior  empirically in the alien utterance condition, reasoning that people could only use their prior to make a prevalence judgment (as we asked the model to do). In both the color and size conditions, peoples' judgments were indeed around 50%, although in the color condition they were directionally lower. This small effect may arise from a fundamental difference between polar adjectives like size (where objects can be big or small) and adjectives like color where there may be many nameable alternatives (e.g. red, blue, green, etc.). Thus, the results of Experiment 3 confirm the modeling assumptions we made in estimating peoples' prior beliefs, and further validate the model we developed as a good candidate model for how people simultaneously draw inferences about speakers' intended referents and the typicality of these referents. That is when people think about why a speaker chose their referring expression, they think about not only the set of present objects as providing the context of referents, but also the broader set of categories that they belong to.
+
+```{r e3-wppl-plot, fig.cap = "Model predictions for Experiment 3"}
+ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat, 
+                         color = condition, fill = condition)) + 
+  facet_wrap(~ searchtype) +
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
+                  position = position_dodge(.5)) + 
+  geom_crossbar(aes(ymin = empirical_stat, ymax = empirical_stat, y = empirical_stat),
+                position = position_dodge(.5), width = .5,
+           alpha = .5, size = .5, data = e3_wppl_data) + 
+  geom_hline(aes(yintercept = 50), linetype = "dashed") +
+  theme(legend.position = c(.4,.8)) 
+```
 
 # Discussion
 
