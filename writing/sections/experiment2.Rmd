@@ -292,11 +292,8 @@ ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat,
 
 ```
 
-<<<<<<< HEAD
-Figure \ref{fig:e2-wppl-plot} shows the predictions of our Rational Speech Act model for comparison with empirical data from people. The model captures the trends in the data correctly, inferring that the target object is more than 50% likely to be the target color if no adjective is used to refer to it (e.g. "dax"), but less than 50% likely to be the target color if it is referred to with an adjective (e.g. "red dax"). The model also infers the prevalence of the target color to be numerically more likely in the contrast condition, like people do. That is, in the contrast condition when an adjective is used to distinguish between referents, the model thinks that the target color is less atypical. When an adjective would be useful to distinguish between two objects of the same shape but one is not used, the model infers that the color of the target object is more prevalent. 
-=======
+
 Figure \ref{fig: e2-wppl-plot} shows the predictions of our Rational Speech Act model compared to empirical data from participants. The model captures the trends in the data correctly, inferring that the critical feature was less prevalent in the category if it is referred to with an adjective (e.g., "red dax") than if it was not mentioned (e.g., "dax"). The model also infers the prevalence of the critical feature to be numerically more likely in the contrast condition, like people do. That is, in the contrast condition when an adjective is used to distinguish between referents, the model thinks that the target color is slightyly less atypical. When an adjective would be useful to distinguish between two objects of the same shape but one is not used, the model infers that the color of the target object is more prevalent. 
->>>>>>> cb87c32a9bc25952a57b254a6691cf9332d683a4
 
 ## Discussion
 
