@@ -1,4 +1,3 @@
-
 # Experiment 2
 
 ```{r e2-read-data}
@@ -46,19 +45,36 @@ e2_mean_data <- e2_subj_data %>%
   tidyboot_mean(percentage)
 ```
 
+In Experiment 1, we examined whether people would interpret description as implying contrast with other present objects. However, description can imply contrast with sets other than the set of currently available referents. One of these alternative sets is the referent's category. Speakers use more description when referring to objects with atypical features (e.g., a yellow tomato) than typical ones [e.g., a red tomato, @mitchell_2013, @westerbeek_2015, @rubio-fernandez_how_2016]. This selective marking of atypical objects potentially supplies useful information to listeners: they have the opportunity to not only learn about the object at hand, but also about its broader category. Further, this kind of contrast may help make sense of the asymmetry between color and size adjectives we found in Experiment 1. Color adjectives that are redundant with respect to reference are not necessarily redundant in general. @rubio-fernandez_how_2016 demonstrates that speakers often use 'redundant' color adjectives to describe colors when they are central to the category's meaning (e.g., colorful t-shirts) or when they are atypical (e.g., a purple banana). Therefore, color may be no less contrastive with respect to the category's feature distribution. In Experiment 2, we test whether listeners use descriptive contrast with a novel object's category to learn about the category's feature distribution. 
+
+If listeners do make contrastive inferences about typicality, it may not be as simple as judging that an over-described referent is atypical. Description can serve many purposes. In the prior experiment, we investigated its use in contrasting between present objects. If a descriptor was needed to distinguish between two present objects, it may not have been used to mark atypicality. For instance, in the context of a bin of heirloom tomatoes, a speaker who wanted a red one in particular might specify that they want a "red tomato" rather than just asking for a "tomato." In this case, the adjective "red" is being used contrastively with respect to reference (as in Experiment 1), and not to mark atypicality. Thus, a listener who does not know much about tomatoes may  attribute the use of "red" to referential disambiguation given the context and not infer that red is an unusual color for tomatoes.
+
+In Experiment 2, we used an artificial language task to set up just this kind of learning situation. We manipulated the contexts in which listeners hear adjectives modifying novel names of novel referents. We asked whether listeners infer that these adjectives identify atypical features of the named objects, and whether the strength of this inference depends on the referential ambiguity of the context in which adjectives are used.
+
+```{r e2-aliens, fig.cap = "Experiment 2 stimuli. In the above example, the critical feature is size and the object context is a within-category contrast: the alien on the right has two same-shaped objects that differ in size."}
+img <- png::readPNG(here("writing/figs/e2-stimuli.png"))
+grid::grid.raster(img)
+```
+
+## Method
+
+### Participants.
+
+Two hundred and forty participants were recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and the other half of participants were assigned to a condition in which the critical feature was size (small or big).
+
+### Stimuli & Procedure.
+
+Stimulus displays showed two alien interlocutors, one on the left side (Alien A) and one on the right side (Alien B) of the screen, each with two novel fruit objects beneath them (Figure \ref{fig:e2-aliens}). Alien A, in a speech bubble, asked Alien B for one of its fruits (e.g., "Hey, pass me the red gade.") Alien B replied, "Here you go!" and the referent disappeared from Alien B's side and reappeared on Alien A's side. 
+
+We manipulated the critical feature type (color or size) between subjects. Two factors, presence of the critical adjective in the referring expression and object context, were fully crossed within subjects. Object context had three levels: within-category contrast, between-category contrast, and same feature. In the within-category contrast condition, Alien B possessed the target object and another object of the same shape, but with a different value of the critical feature (color or size). In the between-category contrast condition, Alien B possessed the target object and another object of a different shape, and with a different value of the critical feature. In the same feature condition, Alien B possessed the target object and another object of a different shape but with the same value of the critical feature as the target. Thus, in the within-category contrast condition, the descriptor was necessary to distinguish the referent; in the between-category contrast condition it was unnecessary but potentially helpful; and in the same feature condition it was unnecessary and unhelpful. Note that in all context conditions, the set of objects onscreen was the same in terms of the experiment design; in each condition, they were rearranged such that the relevant referents (the objects under Alien B) were different. Thus, in each case, participants saw the target object and one other object that shared the target object's shape but not its critical feature--they observed the same kind of feature distribution of the target object's category in each trial type. The particular values of the features were randomly chosen at each trial.
+
+Participants performed six trials. After each exchange between the alien interlocutors, they made a judgment about the prevalence of the target's critical feature in the target object's category. For instance, after seeing a red blicket being exchanged, participants would be asked, "On this planet, what percentage of blickets do you think are red?" and answer on a sliding scale between zero and 100. In the size condition, participants were asked, "On this planet, what percentage of blickets do you think are the size shown below?" with an image of the target object they just saw available on the screen. 
+
+After completing the study, participants were asked to select which of a set of alien words they had seen previously during the study. Four were words they had seen, and four were novel lure words. Participants were dropped from further analysis if they did not respond to at least 6 of these 8 correctly (above chance performance as indicated by a one-tailed binomial test at the $p = .05$ level). This resulted in excluding `r e2_excluded_n` participants, leaving `r e2_kept_n` for further analysis.  
+
+## Results
+
 ```{r e2-models}
-
-ggplot(e2_mean_data,
-       aes(x = adjective, color = condition, group = condition)) + 
-  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
-                      position = position_dodge(.5)) +
-  facet_wrap(~searchtype) +
-  ylab("Prevalence judgment") +
-  xlab("Context type") +
-  labs(color = "adj") + 
-  theme(text = element_text(size=20)) +
-  scale_color_ptol()
-
 e2_model <- lmer(percentage ~ condition * adjective * searchtype +
                 (adjective | subid),
               control = lmerControl(optimizer = "bobyqa"),
@@ -73,32 +89,17 @@ walk2(c("e2_adj", "e2_search_same", "e2_search_different", "e2_adj_diff", "e2_ad
       ~ make_text_vars(e2_model, .x, .y))
 ```
 
-In our first experiment, we examined whether people would interpret description as implying contrast with other present objects. However, as discussed earlier, description can imply contrast with sets other than the set of currently available referents. One of these alternative sets is the referent's category. Speakers use more description when referring to objects with atypical features (e.g., a yellow tomato) than typical ones (e.g., a red tomato) [@mitchell_2013, @westerbeek_2015, @rubio-fernandez_how_2016]. This selective marking of atypical objects potentially supplies useful information to listeners: they have the opportunity to not only learn about the object at hand, but also about its broader category. Further, this kind of contrast may help make sense of the asymmetry between color and size adjectives we found in Experiment 1. Color adjectives that are redundant with respect to reference are not necessarily redundant in general. @rubio-fernandez_how_2016 demonstrates that speakers often use 'redundant' color adjectives to describe colors when they are central to the category's meaning (e.g., colorful t-shirts) or when they are atypical (e.g., a purple banana). Therefore, color may be no less contrastive with respect to the category's feature distribution. In the following experiment, we test whether listeners use descriptive contrast with a novel object's category to learn about the category's feature distribution. 
-
-If listeners do make contrastive inferences about typicality, it may not be as simple as judging that an over-described referent is atypical. Description can serve many purposes. In the prior experiment, we investigated its use in contrasting between present objects. If a descriptor was needed to distinguish between two present objects, it may not have been used to mark atypicality. For instance, in the context of a bin of heirloom tomatoes, a speaker who wanted a red one in particular might specify that they want a "red tomato" rather than just asking for a "tomato." In this case, the adjective "red" is being used contrastively with respect to reference (as in Experiment 1), and not to mark atypicality. Thus, a listener who does not know much about tomatoes may  attribute the use of "red" to referential disambiguation given the context and not infer that red is an unusual color for tomatoes.
-
-In Experiment 2, we used an artificial language task to set up just this kind of learning situation. We manipulated the contexts in which listeners hear adjectives modifying novel names of novel referents. We asked whether listeners infer that these adjectives identify atypical features of the named objects, and whether the strength of this inference depends on the referential ambiguity of the context in which adjectives are used.
-
-```{r e2-aliens, fig.cap = "Experiment 2 stimuli. In the above example, the critical feature is size and the object context is a within-category contrast: the alien on the right has two same-shaped objects that differ in size."}
-img <- png::readPNG(here("writing/figs/e2-stimuli.png"))
-grid::grid.raster(img)
+```{r e2-results, fig.cap = "\\textcolor{red}{something goes here. also need annotations.}", fig.height = 2}
+ggplot(e2_mean_data,
+       aes(x = adjective, color = condition, group = condition)) + 
+  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
+                      position = position_dodge(.5)) +
+  facet_wrap(~searchtype) +
+  ylab("Prevalence judgment") +
+  xlab("Context type") +
+  labs(color = "adj") + 
+  scale_color_ptol()
 ```
-
-## Method
-
-### Participants.
-Two hundred and forty participants were recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and the other half of participants were assigned to a condition in which the critical feature was size (small or big).
-
-### Stimuli & Procedure.
-Stimulus displays (Figure \ref{fig:e3-aliens}) showed two alien interlocutors, one on the left side (Alien A) and one on the right side (Alien B) of the screen, each with two novel fruit objects beneath them. Alien A, in a speech bubble, asked Alien B for one of its fruits (e.g., "Hey, pass me the red gade.") Alien B replied, "Here you go!" and the referent disappeared from Alien B's side and reappeared on Alien A's side. 
-
-We manipulated the critical feature type (color or size) between subjects. Two factors, presence of the critical adjective in the referring expression and object context, were fully crossed within subjects. Object context had three levels: within-category contrast, between-category contrast, and same feature. In the within-category contrast condition, Alien B possessed the target object and another object of the same shape, but with a different value of the critical feature (color or size). In the between-category contrast condition, Alien B possessed the target object and another object of a different shape, and with a different value of the critical feature. In the same feature condition, Alien B possessed the target object and another object of a different shape but with the same value of the critical feature as the target. Thus, in the within-category contrast condition, the descriptor was necessary to distinguish the referent; in the between-category contrast condition it was unnecessary but potentially helpful; and in the same feature condition it was unnecessary and unhelpful. Note that in all context conditions, the set of objects onscreen was the same in terms of the experiment design; in each condition, they were rearranged such that the relevant referents (the objects under Alien B) were different. Thus, in each case, participants saw the target object and one other object that shared the target object's shape but not its critical feature--they observed the same kind of feature distribution of the target object's category in each trial type. The particular values of the features were randomly chosen at each trial.
-
-Participants performed six trials. After each exchange between the alien interlocutors, they made a judgment about the prevalence of the target's critical feature in the target object's category. For instance, after seeing a red blicket being exchanged, participants would be asked, "On this planet, what percentage of blickets do you think are red?" and answer on a sliding scale between zero and 100. In the size condition, participants were asked, "On this planet, what percentage of blickets do you think are the size shown below?" with an image of the target object they just saw available on the screen. 
-
-After completing the study, participants were asked to select which of a set of alien words they had seen previously during the study. Four were words they had seen, and four were novel lure words. Participants were dropped from further analysis if they did not respond to at least 6 of these 8 correctly (above chance performance as indicated by a one-tailed binomial test at the $p = .05$ level). This resulted in excluding `r e2_excluded_n` participants, leaving `r e2_kept_n` for further analysis.  
-
-## Results
 
 We analyzed participants' judgments of the prevalence of the target object's critical feature in its category. We began by fitting a maximum mixed-effects linear model: effects utterance type (adjective or no adjective), context type (within category, between category, or same feature), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, and fixed effects were removed if they did not improve model fit (XXX CHECK THIS). The final model revealed a significant effect of utterance type ($\beta_{adjective} =$ `r e2_adj_estimate`, $t =$ `r e2_adj_statistic`, $p$ `r e2_adj_p.value`), such that prevalence judgments were lower when an adjective was used than when it was not. Participants also made lower prevalence judgments in the same-feature context type relative to within-category context type ($\beta_{same} =$ `r e2_search_same_estimate`, $t =$ `r e2_search_same_statistic`, $p =$ `r e2_search_same_p.value`), but there was no significant effect of between-category relative to within-category contexts ($\beta_{between} =$ `r e2_search_different_estimate`, $t =$ `r e2_search_different_statistic`, $p =$ `r e2_search_different_p.value`). There was not a significant interaction between context and presence of an adjective in the utterance ($\beta_{same*adjective} =$ `r e2_adj_same_estimate`, $t =$ `r e2_adj_same_statistic`, $p =$ `r e2_adj_same_p.value`; $\beta_{between*adjective} =$ `r e2_adj_diff_estimate`, $t =$ `r e2_adj_diff_statistic`, $p =$ `r e2_adj_diff_p.value`). That is, participants slightly adjusted their inferences according to the object context, though not in a way that depended on whether an adjective was used in the utterance. However, they robustly inferred that described features were less prevalent in the target’s category than unmentioned features.  
 
@@ -106,9 +107,9 @@ We analyzed participants' judgments of the prevalence of the target object's cri
 
 Description is often used not to distinguish among present objects, but to pick out an object's feature as atypical of its category. In Experiment 2, we asked whether people would infer that a described feature is atypical of a novel category after hearing it mentioned in an exchange. We found that people robustly inferred that a mentioned feature was atypical of its category, across both size and color description. Further, participants did not use object context to substantially explain away description. That is, when description was necessary to distinguish among present objects (e.g., there were two same-shaped objects that differed only in the mentioned feature), participants still inferred that the feature was atypical of its category. This suggests that, in the case of hearing someone ask for a "red tomato" from a bin of many-colored heirloom tomatoes, a person naive about tomatoes would infer that tomatoes are relatively unlikely to be red.
 
-[add paragraph about diff in color/size asymmetry between exps 1 and 2, people tracking production norms on the level of the type of contrast set]
+\textcolor{red}{[add paragraph about diff in color/size asymmetry between exps 1 and 2, people tracking production norms on the level of the type of contrast set]}
 
-## Model 2
+## Model
 
 To allow the Rational Speech Act Framework to capture inferences about typicality, we modified the Speaker's utility function to have an additional term: the listener's expected processing difficulty. Speakers may be motivated to help listeners to select the correct referent not just eventually but as quickly as possible. People are both slower and less accurate at identifying atypical members of a category as members of that category [@rosch_structural_1976, @dale_graded_2007]. If speakers account for listeners' processing difficulties, they should be unlikely to produce bare nouns to refer to low typicality exemplars (e.g. unlikely to call a purple carrot "carrot"). This is roughly the kind of inference encoded in @degen_when_2020's continuous semantics Rational Speech Act model. 
 
@@ -294,7 +295,7 @@ ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat,
 ```
 
 
-Figure \ref{fig: e2-wppl-plot} shows the predictions of our Rational Speech Act model compared to empirical data from participants. The model captures the trends in the data correctly, inferring that the critical feature was less prevalent in the category if it is referred to with an adjective (e.g., "red dax") than if it was not mentioned (e.g., "dax"). The model also infers the prevalence of the critical feature to be numerically more likely in the contrast condition, like people do. That is, in the contrast condition when an adjective is used to distinguish between referents, the model thinks that the target color is slightyly less atypical. When an adjective would be useful to distinguish between two objects of the same shape but one is not used, the model infers that the color of the target object is more prevalent. 
+Figure \ref{fig:e2-wppl-plot} shows the predictions of our Rational Speech Act model compared to empirical data from participants. The model captures the trends in the data correctly, inferring that the critical feature was less prevalent in the category if it is referred to with an adjective (e.g., "red dax") than if it was not mentioned (e.g., "dax"). The model also infers the prevalence of the critical feature to be numerically more likely in the contrast condition, like people do. That is, in the contrast condition when an adjective is used to distinguish between referents, the model thinks that the target color is slightyly less atypical. When an adjective would be useful to distinguish between two objects of the same shape but one is not used, the model infers that the color of the target object is more prevalent. 
 
 ## Discussion
 
