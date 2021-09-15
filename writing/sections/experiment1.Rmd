@@ -94,16 +94,15 @@ condition_names <- c(
                     "color" = "color"
                     )
 e1_mean_data %>%
-  mutate(empirical_stat = if_else(searchtype == "uniquetarget" & 
-                                    item == "lure", as.double(NA), empirical_stat),
-         item = factor(item, levels = c("target", "lure"))) %>%
+  filter(searchtype == "contrast") %>%
+  mutate(item = factor(item, levels = c("target", "lure"))) %>%
   ggplot(aes(x = adjective_used, color = item, label = item, y = empirical_stat)) +
-  facet_grid(condition ~ searchtype, labeller = as_labeller(condition_names)) + 
+  facet_grid(~condition, labeller = as_labeller(condition_names)) + 
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper),
                   position = position_dodge(.25)) + 
   scale_color_ptol() + 
   ylab("Item chosen") + 
-  xlab("") + 
+  xlab("Utterance type") + 
   geom_dl(method = list(dl.trans(x=x - .5), "first.qp", cex=.7)) +
   theme(legend.position = "none")
 

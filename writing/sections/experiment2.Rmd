@@ -89,16 +89,33 @@ walk2(c("e2_adj", "e2_search_same", "e2_search_different", "e2_adj_diff", "e2_ad
       ~ make_text_vars(e2_model, .x, .y))
 ```
 
-```{r e2-results, fig.cap = "\\textcolor{red}{something goes here. also need annotations.}", fig.height = 2}
-ggplot(e2_mean_data,
-       aes(x = adjective, color = condition, group = condition)) + 
+```{r e2-results, fig.cap = "Prevalence judgments from Experiment 2. Participants consistently judged the target object as less typical of its category when the referent was described with an adjective (e.g., \"Pass me the blue toma\") than when it was not (e.g., \"Pass me the toma\"). This inference was not significantly modulated by object context (examples shown above each figure panel).", fig.height = 4, fig.width = 6.46}
+labels <- rasterGrob(png::readPNG(here("writing/figs/e2_plot_labels.png")), interpolate = TRUE)
+
+
+plot <- ggplot(e2_mean_data,
+       aes(x = adjective, color = condition, group = condition)) +
   geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
                       position = position_dodge(.5)) +
   facet_wrap(~searchtype) +
   ylab("Prevalence judgment") +
-  xlab("Context type") +
-  labs(color = "adj") + 
-  scale_color_ptol()
+  xlab("Utterance type") +
+  labs(color = "Adjective type") + 
+  scale_color_ptol() +
+  theme(legend.position = c(0.87, 0.8))+ 
+theme(
+  strip.background = element_blank(),
+  strip.text.x = element_blank(),
+  legend.box.background = element_rect(colour = "black")
+)
+
+grid.arrange(labels, plot, nrow = 2,
+             widths = c(1,19),
+             heights = c(2,7),
+             layout_matrix = rbind(c(NA, 1),
+                                   c(2)))
+
+
 ```
 
 We analyzed participants' judgments of the prevalence of the target object's critical feature in its category. We began by fitting a maximum mixed-effects linear model: effects utterance type (adjective or no adjective), context type (within category, between category, or same feature), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, and fixed effects were removed if they did not improve model fit (XXX CHECK THIS). The final model revealed a significant effect of utterance type ($\beta_{adjective} =$ `r e2_adj_estimate`, $t =$ `r e2_adj_statistic`, $p$ `r e2_adj_p.value`), such that prevalence judgments were lower when an adjective was used than when it was not. Participants also made lower prevalence judgments in the same-feature context type relative to within-category context type ($\beta_{same} =$ `r e2_search_same_estimate`, $t =$ `r e2_search_same_statistic`, $p =$ `r e2_search_same_p.value`), but there was no significant effect of between-category relative to within-category contexts ($\beta_{between} =$ `r e2_search_different_estimate`, $t =$ `r e2_search_different_statistic`, $p =$ `r e2_search_different_p.value`). There was not a significant interaction between context and presence of an adjective in the utterance ($\beta_{same*adjective} =$ `r e2_adj_same_estimate`, $t =$ `r e2_adj_same_statistic`, $p =$ `r e2_adj_same_p.value`; $\beta_{between*adjective} =$ `r e2_adj_diff_estimate`, $t =$ `r e2_adj_diff_statistic`, $p =$ `r e2_adj_diff_p.value`). That is, participants slightly adjusted their inferences according to the object context, though not in a way that depended on whether an adjective was used in the utterance. However, they robustly inferred that described features were less prevalent in the target’s category than unmentioned features.  

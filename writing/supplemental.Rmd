@@ -59,6 +59,90 @@ make_text_vars <- function(df, term_name, term_filter = NULL) {
 \renewcommand{\thefigure}{S\arabic{figure}}
 \section{Experiment 1}
 
+```{r load-data}
+e1_raw_data <- read_csv(here("data/exp1_turk_data.csv")) 
+
+e1_total_subjs <- e1_raw_data %>%
+  distinct(subid) %>%
+  count() %>%
+  pull()
+
+e1_total_color_subjs <- e1_raw_data %>%
+  filter(condition == "color") %>%
+  distinct(subid) %>%
+  count() %>%
+  pull()
+
+e1_total_size_subjs <- e1_raw_data %>%
+  filter(condition == "size") %>%
+  distinct(subid) %>%
+  count() %>%
+  pull()
+
+
+e1_keep_subjs <- e1_raw_data %>%
+  filter(searchtype == "colorcheck", chosetarget == TRUE, 
+         attncheckscore >= 6) %>%
+  count(subid) %>%
+  filter(n == 4) %>%
+  pull(subid)
+
+e1_data_no_gather <- e1_raw_data %>%
+  filter(subid %in% e1_keep_subjs,
+         trialtype != 0) %>%
+  mutate(subid = as.factor(subid))
+
+e1_data <- e1_raw_data %>%
+  filter(subid %in% e1_keep_subjs,
+         trialtype != 0) %>%
+  pivot_longer(cols = c(chosetarget, choselure, choseunique), 
+               names_to = "item", values_to = "chose") %>%
+  mutate(item = gsub("chose", "", item),
+         subid = as.factor(subid))
+
+e1_color_subjs <- e1_data %>%
+  filter(condition == "color") %>%
+  distinct(subid) %>%
+  nrow()
+
+e1_size_subjs <- e1_data %>%
+  filter(condition == "size") %>%
+  distinct(subid) %>%
+  nrow()
+
+e1_mean_data <- e1_data %>%
+  filter(item != "unique") %>%
+  group_by(condition, searchtype, adj, item, subid) %>%
+  summarise(chose = mean(chose)) %>%
+  tidyboot_mean(chose) %>%
+  ungroup() %>%
+  mutate(adjective_used = factor(adj, labels = c("noun", "adjective noun"))) 
+```
+
+
+```{r e1-plot}
+
+condition_names <- c(
+                    "contrast" = "contrastive display",
+                    "uniquetarget" = "unique target display",
+                    "size" = "size",
+                    "color" = "color"
+                    )
+
+e1_mean_data %>%
+  mutate(empirical_stat = if_else(searchtype == "uniquetarget" & 
+                                    item == "lure", as.double(NA), empirical_stat),
+         item = factor(item, levels = c("target", "lure"))) %>%
+  ggplot(aes(x = adjective_used, color = item, label = item, y = empirical_stat)) +
+  facet_grid(condition ~ searchtype, labeller = as_labeller(condition_names)) + 
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper),
+                  position = position_dodge(.25)) + 
+  scale_color_ptol() + 
+  ylab("Item chosen") + 
+  xlab("") + 
+  geom_dl(method = list(dl.trans(x=x - .5), "first.qp", cex=.7)) +
+  theme(legend.position = "none")
+```
 
 \section{Experiment 2}
 
