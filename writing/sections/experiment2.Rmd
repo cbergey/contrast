@@ -102,7 +102,9 @@ plot <- ggplot(e2_mean_data,
   xlab("Utterance type") +
   labs(color = "Adjective type") + 
   scale_color_ptol() +
-  theme(legend.position = c(0.87, 0.8))+ 
+  geom_dl(aes(label = condition, y = empirical_stat), 
+          position = position_dodge(.5),
+          method = list(dl.trans(x = x + 1, y = y - .7), "first.points", cex=.7)) +
 theme(
   strip.background = element_blank(),
   strip.text.x = element_blank(),
@@ -111,7 +113,7 @@ theme(
 
 grid.arrange(labels, plot, nrow = 2,
              widths = c(1,19),
-             heights = c(2,7),
+             heights = c(2,5),
              layout_matrix = rbind(c(NA, 1),
                                    c(2)))
 
@@ -299,7 +301,7 @@ e2_wppl_data <- e2_inference_means %>%
 #   scale_y_continuous(labels = function(y) y + 50, limits = c(-15,15))
 
 ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat, 
-                         color = condition, fill = condition)) + 
+                         color = condition)) + 
   facet_wrap(~ searchtype) +
   geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
                   position = position_dodge(.5)) + 
@@ -307,8 +309,12 @@ ggplot(e2_mean_data, aes(x = adjective, y = empirical_stat,
   geom_crossbar(aes(ymin = empirical_stat, ymax = empirical_stat, y = empirical_stat),
                 position = position_dodge(.5), width = .5,
            alpha = .5, size = .5, data = e2_wppl_data) + 
-  geom_hline(aes(yintercept = 50), linetype = "dashed") 
-
+  geom_hline(aes(yintercept = 50), linetype = "dashed") +
+  scale_color_ptol() +
+  geom_dl(aes(label = condition), 
+          position = position_dodge(.5),
+          method = list(dl.trans(x = x + 1, y = y - .7), "first.points", cex=.7)) +
+  theme(legend.position = "none")
 ```
 
 

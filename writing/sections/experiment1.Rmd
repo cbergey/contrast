@@ -434,9 +434,12 @@ ggplot(e1_webppl_data, aes(x = utterance, color = item, fill = item)) +
            alpha = .5, size = .5) + 
   facet_wrap(~ condition) + 
   labs(x = "", y = "item chosen") +
-  theme(legend.position = "right") +
   scale_color_ptol() +
-  scale_fill_ptol()
+  scale_fill_ptol() +
+  geom_dl(aes(label = item, y = empirical_stat), 
+          position = position_dodge(.5),
+          method = list(dl.trans(x = x + 1), "first.points", cex=.7)) +
+  theme(legend.position = "none")
 ```
 
 Our empirical data suggest that people treat color and size adjectives differently, making a stronger contrastive inference with size than with color. One potential explanation for this difference is that people are aware of production asymmetries between color and size. As mentioned, speakers tend to over-describe color, providing more color adjectives than necessary to establish reference, while describing size more minimally [@pechmann_incremental_1989; @nadig_evidence_2002]. Listeners may be aware of this production asymmetry and discount the contrastive weight of color adjectives with respect to reference. 
