@@ -117,6 +117,16 @@ e1_mean_data <- e1_data %>%
   tidyboot_mean(chose) %>%
   ungroup() %>%
   mutate(adjective_used = factor(adj, labels = c("noun", "adjective noun"))) 
+
+
+# full model to report in supplemental, pre-reg'd
+full_model <- e1_data_no_gather %>%
+  filter(searchtype == "contrast" | searchtype == "uniquetarget") %>%
+  glmer(chosetarget ~ adj * condition * searchtype + (searchtype * adj | subid),
+        family = "binomial", data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed")  %>%
+  mutate(p.value = printp(p.value))
 ```
 
 
