@@ -178,7 +178,7 @@ e3_wppl_data <- e2_wppl_data %>%
          searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
 ```
 
-```{r e3-wppl-plot, fig.cap = "Model predictions for Experiment 3"}
+```{r e3-wppl-plot, fig.cap = "Participants' prevalence judgments in Experiment 3, with model predictions using the parameters estimated in Experiment 2 (horizontal lines)."}
 ggplot(e3_mean_data, aes(x = adjective, y = empirical_stat, 
                          color = condition, fill = condition)) + 
   facet_wrap(~ searchtype) +

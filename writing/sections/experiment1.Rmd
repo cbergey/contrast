@@ -422,7 +422,7 @@ e1_webppl_data <- e1_mean_data %>%
          prob_min = prob, prob_max = prob)
 ```
 
-```{r e1-webppl-plot, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", fig.cap = "Proportion of times that people (and our model) chose the target and lure items as a function of adjective type and whether an adjective was provided. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid lines show model predictions."}
+```{r e1-webppl-plot, fig.env = "figure", fig.width=6, fig.height=3, fig.align = "center", fig.cap = "Proportion of times that people (and our model) chose the target and lure items as a function of adjective type and whether an adjective was provided. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid horizontal lines show model predictions."}
 ggplot(e1_webppl_data, aes(x = utterance, color = item, fill = item)) + 
   geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper),
                       position = position_dodge(.5),) + 
