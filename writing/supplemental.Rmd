@@ -33,6 +33,9 @@ library(broom)
 library(broom.mixed)
 library(effectsize)
 library(glue)
+library(directlabels)
+library(ggthemes)
+
 opts_chunk$set(message = FALSE, warning = FALSE, error = FALSE, cache = TRUE, 
                tidy = FALSE, echo = FALSE)
 theme_set(theme_classic(base_size = 12))
@@ -60,7 +63,8 @@ make_text_vars <- function(df, term_name, term_filter = NULL) {
 \section{Experiment 1}
 
 ```{r load-data}
-e1_raw_data <- read_csv(here("data/exp1_turk_data.csv")) 
+e1_raw_data <- read_csv(here("data/exp1_turk_data.csv"),
+                        show_col_types = FALSE) 
 
 e1_total_subjs <- e1_raw_data %>%
   distinct(subid) %>%
@@ -120,9 +124,9 @@ e1_mean_data <- e1_data %>%
 
 
 # full model to report in supplemental, pre-reg'd
+# full adj * searchtype random effect model didn't converge. searchtype + 1 also didn't converge. 1+ adj converges.
 full_model <- e1_data_no_gather %>%
-  filter(searchtype == "contrast" | searchtype == "uniquetarget") %>%
-  glmer(chosetarget ~ adj * condition * searchtype + (searchtype * adj | subid),
+  glmer(chosetarget ~ adj * condition * searchtype + (1 + adj | subid),
         family = "binomial", data = .) %>%
   tidy() %>%
   filter(effect == "fixed")  %>%
@@ -157,11 +161,13 @@ e1_mean_data %>%
 \section{Experiment 2}
 
 ```{r e2-read-data}
-e2_color_data <- read_csv(here("data/exp2/color.csv")) %>%
+e2_color_data <- read_csv(here("data/exp2/color.csv"), 
+                          show_col_types = FALSE) %>%
   mutate(condition = "color", targetsize = "big") %>%
   rename(adj = colorasked, distractorfeature = distractorcolor)
 
-e2_size_data <- read_csv(here("data/exp2/size.csv")) %>%
+e2_size_data <- read_csv(here("data/exp2/size.csv"),
+                         show_col_types = FALSE) %>%
   mutate(condition = "size") %>%
   rename(adj = sizeasked, distractorfeature = distractorsize)
 
@@ -221,16 +227,16 @@ rtmodel <- lmer(log_rt ~ adjective * searchtype + condition +
   filter(effect == "fixed") %>%
   mutate(p.value = printp(p.value))
 
-tidy_rtmodel <- tidy(rtmodel) %>%
-  filter(effect == "fixed")
+e2_rt_means <- e2_subj_data %>%
+  group_by(searchtype, adjective, condition) %>%
+  tidyboot_mean(log_rt)
 ```
 
 Thus, participants treated all adjectives as marked, and inferred lower typicality, regardless of whether they could felicitiously be interpreted as contrasting between potential target referents. But were participants nonetheless sensitive to this information in their response times? We investigated this question by analyzing participants' time to advance after seeing the aliens' referential exchange. Though this task was not speeded, we hypothesized that participants would advance more quickly after seeing referential exchanges that were easier to process. After dropping all response times less than 1 second and longer than 10 seconds, and log transforming them because of the right skew in response time data, we predicted participants' time to advance on each trial of the experiment from utterance type, context type, critical adjective type, and the interaction between utterance type and context type (\texttt{log(rt) $\sim$ adjective * search + type + (1 |subj)}). This model showed a reliable effect of utterance type ($\beta_{adjective} =$ , $t =$ , $p$ )--participants were faster when an a descriptor was provided despite having to process an additional word. There was no main effect of critical adjective type ($\beta_{size} =$ , $t =$ , $p =$ ), nor context type ($\beta_{different} =$ , $t =$ , $p =$ ; $\beta_{same} =$ , $t =$ , $p =$ ), but the interactions between utterance type and context type trended towards significance for both non-contrast searches ($\beta_{adjective*different} =$ , $t =$ , $p =$ ; $\beta_{adjective*same} =$ , $t =$ , $p =$ ). Directionally, these results indicate that participants took longer to process utterances which were under-described (within-category contrast trials with no adjective) than those with appropriately no description, and processed trials with an appropriate level of description (contrast trials with an adjective) more quickly than those with superfluous description.
 
 ```{r rtplotinference}
 fig.cap="The log reaction time participants took to advance after seeing the referential exchange, by condition."
-ggplot(filter(means, measure == "log_rt"),
-       aes(x = adjective, color = condition)) +
+ggplot(e2_mean_data, aes(x = adjective, color = condition)) +
   facet_wrap(~searchtype) +
   geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper),
                       position = position_dodge(.5)) +
@@ -242,8 +248,7 @@ ggplot(filter(means, measure == "log_rt"),
 
 \section{Experiment 3}
 ```{r e3-read-data}
-
-e3_data <- read_csv(here("data/exp3_turk_data.csv"))
+e3_data <- read_csv(here("data/exp3_turk_data.csv"), show_col_types = FALSE)
 
 # participants who have unbalanced numbers of trials in each condition
 e3_exclude <- e3_data %>% count(subid, utttype, searchtype) %>% filter(n == 2 | n == 3)
@@ -267,9 +272,12 @@ e3_subj_data <- e3_data %>%
   mutate(rtsearch = rtsearch - 6500) %>% # time before selections can be made
   mutate(log_rt = log(rtsearch)) %>%
   mutate(adjective = if_else(utttype == "adj", "adjective noun", utttype),
-         adjective = if_else(adjective == "noutt", "alien utterance", adjective),
+         adjective = if_else(adjective == "noutt", "alien utterance", 
+                             adjective),
          adjective = if_else(adjective == "noadj", "noun", adjective),
-         adjective = factor(adjective, levels = c("noun", "adjective noun", "alien utterance")),
+         adjective = factor(adjective, 
+                            levels = c("noun", "adjective noun", 
+                                       "alien utterance")),
          searchtype = factor(searchtype, levels = c("contrast", "different")))
 
 e3_mean_data <- e3_subj_data %>%
