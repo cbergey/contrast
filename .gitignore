@@ -38,3 +38,11 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 *.DS_Store
+
+writing/figs/*
+*/*files/*
+*.aux
+*.tex
+*.fff
+*.log
+*.RData
