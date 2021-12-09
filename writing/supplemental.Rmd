@@ -198,7 +198,7 @@ e2_subj_data <- e2_data %>%
   mutate(log_rt = log(rtsearch)) %>%
   mutate(adjective = if_else(adjective == TRUE, "adjective noun", "noun"),
          adjective = factor(adjective, levels = c("noun", "adjective noun")),
-         searchtype = factor(searchtype, levels = c("contrast", "different", "same")))
+         searchtype = factor(searchtype, levels = c("different", "contrast", "same")))
 
 e2_mean_data <- e2_subj_data %>%
   group_by(searchtype, adjective, condition) %>%
@@ -212,9 +212,9 @@ e2_model <- lmer(percentage ~ condition * adjective * searchtype +
   filter(effect == "fixed") %>%
   mutate(p.value = printp(p.value))
 
-walk2(c("e2_adj", "e2_search_same", "e2_search_different", "e2_adj_diff", "e2_adj_same"), 
-      c("adjectiveadjective noun", "searchtypesame", "searchtypedifferent",
-        "adjectiveadjective noun:searchtypedifferent", "adjectiveadjective noun:searchtypesame"), 
+walk2(c("e2_adj", "e2_search_same", "e2_search_contrast", "e2_adj_contrast", "e2_adj_same"), 
+      c("adjectiveadjective noun", "searchtypesame", "searchtypecontrast",
+        "adjectiveadjective noun:searchtypecontrast", "adjectiveadjective noun:searchtypesame"), 
       ~ make_text_vars(e2_model, .x, .y))
 ```
 
@@ -232,7 +232,7 @@ e2_rt_means <- e2_subj_data %>%
   tidyboot_mean(log_rt)
 ```
 
-Thus, participants treated all adjectives as marked, and inferred lower typicality, regardless of whether they could felicitiously be interpreted as contrasting between potential target referents. But were participants nonetheless sensitive to this information in their response times? We investigated this question by analyzing participants' time to advance after seeing the aliens' referential exchange. Though this task was not speeded, we hypothesized that participants would advance more quickly after seeing referential exchanges that were easier to process. After dropping all response times less than 1 second and longer than 10 seconds, and log transforming them because of the right skew in response time data, we predicted participants' time to advance on each trial of the experiment from utterance type, context type, critical adjective type, and the interaction between utterance type and context type (\texttt{log(rt) $\sim$ adjective * search + type + (1 |subj)}). This model showed a reliable effect of utterance type ($\beta_{adjective} =$ , $t =$ , $p$ )--participants were faster when an a descriptor was provided despite having to process an additional word. There was no main effect of critical adjective type ($\beta_{size} =$ , $t =$ , $p =$ ), nor context type ($\beta_{different} =$ , $t =$ , $p =$ ; $\beta_{same} =$ , $t =$ , $p =$ ), but the interactions between utterance type and context type trended towards significance for both non-contrast searches ($\beta_{adjective*different} =$ , $t =$ , $p =$ ; $\beta_{adjective*same} =$ , $t =$ , $p =$ ). Directionally, these results indicate that participants took longer to process utterances which were under-described (within-category contrast trials with no adjective) than those with appropriately no description, and processed trials with an appropriate level of description (contrast trials with an adjective) more quickly than those with superfluous description.
+Thus, participants treated all adjectives as marked, and inferred lower typicality, regardless of whether they could felicitiously be interpreted as contrasting between potential target referents. But were participants nonetheless sensitive to this information in their response times? We investigated this question by analyzing participants' time to advance after seeing the aliens' referential exchange. Though this task was not speeded, we hypothesized that participants would advance more quickly after seeing referential exchanges that were easier to process. After dropping all response times less than 1 second and longer than 10 seconds, and log transforming them because of the right skew in response time data, we predicted participants' time to advance on each trial of the experiment from utterance type, context type, critical adjective type, and the interaction between utterance type and context type (\texttt{log(rt) $\sim$ adjective * search + type + (1 |subj)}). This model showed a reliable effect of utterance type ($\beta_{adjective} =$ , $t =$ , $p$ )--participants were faster when an a descriptor was provided despite having to process an additional word. There was no main effect of critical adjective type ($\beta_{size} =$ , $t =$ , $p =$ ), nor context type ($\beta_{contrast} =$ , $t =$ , $p =$ ; $\beta_{same} =$ , $t =$ , $p =$ ), but the interactions between utterance type and context type trended towards significance for both non-contrast searches ($\beta_{adjective*contrast} =$ , $t =$ , $p =$ ; $\beta_{adjective*same} =$ , $t =$ , $p =$ ). Directionally, these results indicate that participants took longer to process utterances which were under-described (within-category contrast trials with no adjective) than those with appropriately no description, and processed trials with an appropriate level of description (contrast trials with an adjective) more quickly than those with superfluous description.
 
 ```{r rtplotinference}
 fig.cap="The log reaction time participants took to advance after seeing the referential exchange, by condition."
@@ -262,7 +262,8 @@ e3_keep_subjs <- e3_data %>%
 
 e3_model_data <- e3_data %>%
   filter(subid %in% e3_keep_subjs$subid) %>%
-  filter(trialtype != 0)
+  filter(trialtype != 0) %>%
+  mutate(searchtype = factor(searchtype, levels = c("differentshapes", "contrast")))
 
 e3_subj_data <- e3_data %>%
   filter(subid %in% e3_keep_subjs$subid) %>%
@@ -278,7 +279,7 @@ e3_subj_data <- e3_data %>%
          adjective = factor(adjective, 
                             levels = c("noun", "adjective noun", 
                                        "alien utterance")),
-         searchtype = factor(searchtype, levels = c("contrast", "different")))
+         searchtype = factor(searchtype, levels = c("different", "contrast")))
 
 e3_mean_data <- e3_subj_data %>%
   group_by(searchtype, adjective, condition) %>%
@@ -326,8 +327,8 @@ e3_full_model <- e3_model_data %>%
   select(-effect, -group) %>%
   mutate(p.value = papaja::printp(p.value))
 
-walk2(c("e3_full_noadj", "e3_full_adj", "e3_full_size", "e3_full_diffshapes", "e3_full_adj_size"), 
-      c("utttypenoadj", "utttypeadj", "conditionsize", "searchtypedifferentshapes", "utttypeadj:conditionsize"), 
+walk2(c("e3_full_noadj", "e3_full_adj", "e3_full_size", "e3_full_contrast", "e3_full_adj_size"), 
+      c("utttypenoadj", "utttypeadj", "conditionsize", "searchtypecontrast", "utttypeadj:conditionsize"), 
       ~ make_text_vars(e3_full_model, .x, .y))
 
 e3_full_model_no_alien <- e3_model_data %>%
