@@ -23,12 +23,12 @@ abstract: |
   In the face of unfamiliar language or objects, description is one cue people can use to learn about both. Beyond narrowing potential referents to those that match a descriptor (e.g., "tall"), listeners could infer that a described object is one that contrasts with other relevant objects of the same type (e.g., "the tall cup" contrasts with another, shorter cup). This contrast may be in relation to other present objects in the environment (this cup is tall among present cups) or to the referent’s category (this cup is tall for a cup in general). In three experiments, we investigate whether listeners use descriptive contrast to learn new word-referent mappings and learn about novel categories' feature distributions. People use contrastive inferences to guide their referent choice, though size--and not color--adjectives prompt them to consistently choose the contrastive target over alternatives (Experiment 1). People also use color and size description to infer that a novel object is atypical of its category (Experiments 2 and 3). However, these two inferences do not trade off substantially: people infer a described referent is atypical even when the descriptor was necessary to establish reference. We model these experiments in the Rational Speech Act (RSA) framework and find it predicts both of these inferences, and a very small trade-off between them consistent with the lack of trade-off we observe in people's inferences. Overall, people are able to use descriptive contrast to resolve reference and make inferences about a novel object’s category, allowing them to learn more about new things than literal meaning alone allows.
 
 authornote: |
-  All data and code for these analyses are available at https://osf.io/3f8hy/?view_only=9a196db0444c4867bc899cc70a7a1e9c.
+  All data and code for these analyses are available at https://github.com/cbergey/contrast.
 
 
 keywords          : "concept learning; pragmatics; communication"
-wordcount         : "1385"
-references        : "42"
+wordcount         : ""
+references        : ""
 
 bibliography      : ["contrast.bib"]
 
