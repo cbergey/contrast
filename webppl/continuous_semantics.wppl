@@ -1,0 +1,102 @@
+var alpha = 1
+var epsilon = .0001
+var size_semvalue = 0.8
+var color_semvalue = 0.99
+var objects1 = [{color: "blue", shape: "toma", string: "blue toma"},
+               {color: "blue", shape: "dax", string: "blue dax"},
+               {color: "red", shape: "toma", string: "red toma"}]
+
+var objects2 = [{color: "blue", shape: "dax", string: "blue dax"},
+               {color: "blue", shape: "toma", string: "blue toma"},
+               {color: "red", shape: "dax", string: "red dax"}]
+
+
+// set of utterances
+var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma"]
+var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
+
+
+var worlds = [{objects: objects1, utterances: utterances1,
+              ps: [1, 1, 1], string: "two toma"},
+             {objects: objects2, utterances: utterances2,
+              ps: [1, 1, 1], string: "two dax"}]
+
+var colors = ["red", "blue"]
+var sizes = ["big", "small"]
+
+// prior over world states
+var worldsPrior = function() {
+  var world = uniformDraw(worlds)
+  return world
+}
+
+// prior over object states
+var objectPrior = function(objects, priors) {
+  //var obj = uniformDraw(objects)
+  var obj = sample(Categorical({ps: priors, vs: objects}))
+  return obj.string
+}
+
+// meaning function to interpret the utterances
+var meaning = function(utterance, obj){
+	var splitWords = utterance.split(' ')
+
+  if (splitWords.length == 1) {
+    var word = splitWords[0]
+  	return Math.log(_.includes(obj, word) + epsilon)
+
+  } else if (splitWords.length == 2) {
+
+		var modifier = splitWords[0]
+		var right_shape = + _.includes(obj, splitWords[1])
+
+		if(_.includes(colors, modifier)) {
+			var color_accuracy = _.includes(obj, modifier) ? color_semvalue : 1 -color_semvalue
+            return Math.log(right_shape * color_accuracy + epsilon)
+		} else if(_.includes(sizes, modifier)) {
+			var size_accuracy = _.includes(obj, modifier) ? size_semvalue : 1 -size_semvalue
+			return Math.log(right_shape * size_accuracy + epsilon)
+		}
+	} else console.error("bad utterance length: " + splitWords.length)
+}
+
+// literal listener
+var literalListener = cache(function(world, utterance){
+  return Infer({method: "enumerate"}, function(){
+    var obj = objectPrior(world.objects, world.ps);
+    factor(meaning(utterance, obj))
+    return obj
+  })
+})
+
+// utterance prior
+var utterancePrior = function(utterances) {
+  var utterance = uniformDraw(utterances)
+  return utterance
+}
+//cost is number of words
+var cost = function(utterance) {
+ return Math.log(utterance.split(" ").length + 1)
+ //return 0
+}
+// pragmatic speaker
+var speaker = cache(function(world, obj){
+  return Infer({method: "enumerate"}, function(){
+    var utterance = uniformDraw(world.utterances)
+    factor(alpha * (literalListener(world, utterance).score(obj) - cost(utterance)))
+    return utterance
+  })
+})
+
+// pragmatic listener
+var pragmaticListener = cache(function(utterance){
+  return Infer({method:"enumerate"}, function() {
+    var world = worldsPrior()
+    var obj = objectPrior(world.objects, world.ps)
+    factor(speaker(world, obj).score(utterance))
+    var world_string = world.string
+    return{obj, world_string}
+  })
+})
+
+pragmaticListener(_.first(data))
