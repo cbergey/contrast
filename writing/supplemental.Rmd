@@ -35,6 +35,7 @@ library(effectsize)
 library(glue)
 library(directlabels)
 library(ggthemes)
+library(rwebppl)
 
 opts_chunk$set(message = FALSE, warning = FALSE, error = FALSE, cache = TRUE, 
                tidy = FALSE, echo = FALSE)
@@ -131,10 +132,18 @@ full_model <- e1_data_no_gather %>%
   tidy() %>%
   filter(effect == "fixed")  %>%
   mutate(p.value = printp(p.value))
+
+walk2(c("e1full_adj", "e1full_size","e1full_uniquetarget","e1full_adj_size", "e1full_adj_uniquetarget",
+        "e1full_size_uniquetarget", "e1full_adj_size_uniquetarget"),
+  c("adjTRUE", "conditionsize", "searchtypeuniquetarget", "adjTRUE:conditionsize", "adjTRUE:searchtypeuniquetarget", "conditionsize:searchtypeuniquetarget", "adjTRUE:conditionsize:searchtypeuniquetarget"),  
+      ~ make_text_vars(full_model, .x, .y))
 ```
 
+In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique_display} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). 
 
-```{r e1-plot}
+** Add more text here with effects of adj*size and three-way interaction
+
+```{r e1-plot, fig.cap = "Referent choice in both the contrastive display trials and the unique target display trials. "}
 
 condition_names <- c(
                     "contrast" = "contrastive display",
@@ -158,7 +167,43 @@ e1_mean_data %>%
   theme(legend.position = "none")
 ```
 
+Here we plot referent choice in both the unique target display trials and the contrastive display trials. Unique target displays had one unique referent (the target) and two identical distractors that differed from it both in shape and the critical feature. Contrastive displays had a target, a contrastive pair which matched the target in shape but had a different critical feature, and a lure which matched the target on the critical shape but differed from it on the critical feature.
+
 \section{Experiment 2}
+
+
+```{r e2-webppl-continuous, eval = FALSE}
+cont_semantics_utterances <- tibble(utterance = c("toma", "red toma"),
+                                utterance_num = as.character(1:2))
+semantic_vals <- tibble(sem_value_size = c(0.8, 0.99), sem_value_color = c(0.99, 0.8), label = c("low_size_high_color", "high_size_low_color"))
+
+cont_semantics_inference <- map_dfr(markedness_utterances %>% pull(utterance), 
+                               ~webppl(program_file = 
+                                         here("webppl/continuous_semantics.wppl"), 
+                                       data = .x),
+                               .id = "utterance_num") %>%
+  left_join(markedness_utterances, by = "utterance_num") %>%
+  select(-utterance_num) %>%
+  as_tibble() %>%
+  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
+         utterance = factor(utterance, levels = c("noun", "adjective noun")))
+
+write_csv(cont_semantics_inference, here("webppl/model_estimates/continuous_semantics.csv"))
+```
+
+```{r load-e2-webppl-markedness}
+cont_semantics_inference <- read_csv(here("webppl/model_estimates/continuous_semantics.csv"),
+                                 show_col_types = FALSE)
+```
+
+```{r summarise-markedness}
+markedness_means <- markedness_inference %>%
+  group_by(utterance) %>%
+  summarise(value = mean(value))
+```
+
+
+Reaction Times
 
 ```{r e2-read-data}
 e2_color_data <- read_csv(here("data/exp2/color.csv"), 
@@ -345,7 +390,7 @@ make_text_vars(e3_full_model_no_alien, "e3_noalien_adj", "utttypeadj")
 
 ```
 
-In addition to the regressions reported in the manuscript, we two pre-registered, targeted regressions to test the effect of utterance type to more specifically in case these effects were unclear in the maximal models. First, we filtered to adjective and no adjective trials and fit a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Participants' prevalence judgments were significantly lower when an adjective was used in the utterance ($\beta =$ `r e3_adj_no_alien_estimate`, $t =$ `r e3_adj_no_alien_statistic`, $p =$ `r e3_adj_no_alien_p.value`). Second, we included all trials in a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Utterances without an adjective resulted in significantly higher prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_noadj_estimate`, $t =$ `r e3_utt_model_noadj_statistic`, $p =$ `r e3_utt_model_noadj_p.value`), and utterances with an adjective did not result in significantly different prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_adj_estimate`, $t =$ `r e3_utt_model_adj_statistic`, $p =$ `r e3_utt_model_adj_p.value`)
+In addition to the regressions reported in the manuscript, we two pre-registered, targeted regressions to test the effect of utterance type to more specifically in case these effects were unclear in the maximal models. First, we filtered to adjective and no adjective trials and fit a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Participants' prevalence judgments were significantly lower when an adjective was used in the utterance ($\beta =$ `r e3_adj_no_alien_estimate`, $t =$ `r e3_adj_no_alien_statistic`, $p =$ `r e3_adj_no_alien_p.value`). Second, we included all trials in a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Utterances without an adjective resulted in significantly higher prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_noadj_estimate`, $t =$ `r e3_utt_model_noadj_statistic`, $p =$ `r e3_utt_model_noadj_p.value`), and utterances with an adjective did not result in significantly different prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_adj_estimate`, $t =$ `r e3_utt_model_adj_statistic`, $p =$ `r e3_utt_model_adj_p.value`).
 
 \newpage
 
