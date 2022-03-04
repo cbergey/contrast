@@ -172,36 +172,63 @@ Here we plot referent choice in both the unique target display trials and the co
 \section{Experiment 2}
 
 
-```{r e2-webppl-continuous, eval = FALSE}
-cont_semantics_utterances <- tibble(utterance = c("toma", "red toma"),
-                                utterance_num = as.character(1:2))
-semantic_vals <- tibble(sem_value_size = c(0.8, 0.99), sem_value_color = c(0.99, 0.8), label = c("low_size_high_color", "high_size_low_color"))
+```{r webppl-continuous, eval = FALSE}
+cont_semantics_utterances <- tibble(utterance = c("dax", "blue dax"),
+                                sem_values = c("0.8,0.99", "0.99,0.8")) %>%
+  tidyr::expand(utterance, sem_values) %>%
+  mutate(all_vals = paste(utterance, sem_values, sep = ","),
+         label = if_else(sem_values == "0.8,0.99", "low_size_high_color", "high_size_low_color"),
+         ids = as.character(1:4))
 
-cont_semantics_inference <- map_dfr(markedness_utterances %>% pull(utterance), 
+
+cont_semantics_inference <- map_dfr(cont_semantics_utterances %>% pull(all_vals), 
                                ~webppl(program_file = 
                                          here("webppl/continuous_semantics.wppl"), 
                                        data = .x),
-                               .id = "utterance_num") %>%
-  left_join(markedness_utterances, by = "utterance_num") %>%
-  select(-utterance_num) %>%
+                               .id = "ids") %>%
+  left_join(cont_semantics_utterances, by = "ids") %>%
   as_tibble() %>%
-  mutate(utterance = if_else(utterance == "toma", "noun", "adjective noun"),
-         utterance = factor(utterance, levels = c("noun", "adjective noun")))
+  mutate(utterance_cond = if_else(utterance == "dax", "noun", "adjective noun"),
+         utterance_cond = factor(utterance_cond, levels = c("noun", "adjective noun")),
+         semantic_val = if_else(label == "high_size_low_color", "Low semantic value", "High semantic value"),
+         semantic_val = factor(semantic_val, levels = c("Low semantic value", "High semantic value")),
+         choice = case_when(obj == "blue dax" & world_string == "two dax" ~ "target",
+                            obj == "blue dax" & world_string == "two toma" ~ "lure",
+                            obj != "blue dax" ~ "other")) %>%
+  select(-all_vals)
+
+# Above: Our webppl code is set up to do both color and size with different semantic values, but we're only doing
+# inference over "color" values here as a demonstration, so we can relabel to just "low semantic val" and 
+# "high semantic val".
 
 write_csv(cont_semantics_inference, here("webppl/model_estimates/continuous_semantics.csv"))
 ```
 
-```{r load-e2-webppl-markedness}
+```{r load-webppl-continuous}
 cont_semantics_inference <- read_csv(here("webppl/model_estimates/continuous_semantics.csv"),
                                  show_col_types = FALSE)
 ```
 
-```{r summarise-markedness}
-markedness_means <- markedness_inference %>%
-  group_by(utterance) %>%
-  summarise(value = mean(value))
+```{r summarise-continuous}
+cont_semantics_inference %>%
+  group_by(utterance_cond, semantic_val, choice) %>%
+  summarise(prob = sum(prob)) %>%
+  filter(choice != "other") %>%
+  ggplot(aes(x = utterance_cond, color = choice, fill = choice)) + 
+  geom_crossbar(aes(ymin = prob, ymax = prob, y = prob),
+                position = position_dodge(.5), width = .5,
+           alpha = .5, size = .5) + 
+  facet_wrap(~ semantic_val) +
+  labs(x = "Utterance", y = "Proportion of the time each item is chosen") +
+  scale_color_ptol() +
+  scale_fill_ptol() +
+  geom_dl(aes(label = choice, y = prob), 
+          position = position_dodge(.5),
+          method = list(dl.trans(y = y - 0.5), "last.points", cex=.7)) +
+  theme(legend.position = "none")
 ```
 
+Above we show the
 
 Reaction Times
 

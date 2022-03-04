@@ -1,0 +1,25 @@
+ids,obj,world_string,prob,utterance,sem_values,label,utterance_cond,semantic_val,choice
+1,blue dax,two dax,0.5821893106294957,blue dax,"0.8,0.99",low_size_high_color,adjective noun,High semantic value,target
+1,blue dax,two toma,0.4117118253392021,blue dax,"0.8,0.99",low_size_high_color,adjective noun,High semantic value,lure
+1,red dax,two dax,0.005938907218824275,blue dax,"0.8,0.99",low_size_high_color,adjective noun,High semantic value,other
+1,red toma,two toma,5.93948317590522e-5,blue dax,"0.8,0.99",low_size_high_color,adjective noun,High semantic value,other
+1,blue toma,two toma,5.93948317590522e-5,blue dax,"0.8,0.99",low_size_high_color,adjective noun,High semantic value,other
+1,blue toma,two dax,4.116714895978767e-5,blue dax,"0.8,0.99",low_size_high_color,adjective noun,High semantic value,other
+2,blue dax,two dax,0.4704569458699873,blue dax,"0.99,0.8",high_size_low_color,adjective noun,Low semantic value,target
+2,blue dax,two toma,0.4116965618394533,blue dax,"0.99,0.8",high_size_low_color,adjective noun,Low semantic value,lure
+2,red dax,two dax,0.11765833629369392,blue dax,"0.99,0.8",high_size_low_color,adjective noun,Low semantic value,other
+2,red toma,two toma,7.349419991652462e-5,blue dax,"0.99,0.8",high_size_low_color,adjective noun,Low semantic value,other
+2,blue toma,two toma,7.349419991652462e-5,blue dax,"0.99,0.8",high_size_low_color,adjective noun,Low semantic value,other
+2,blue toma,two dax,4.116759703249081e-5,blue dax,"0.99,0.8",high_size_low_color,adjective noun,Low semantic value,other
+3,blue dax,two toma,0.4117091738925759,dax,"0.8,0.99",low_size_high_color,noun,High semantic value,lure
+3,red dax,two dax,0.29407631924586225,dax,"0.8,0.99",low_size_high_color,noun,High semantic value,other
+3,blue dax,two dax,0.29407631924586225,dax,"0.8,0.99",low_size_high_color,noun,High semantic value,target
+3,red toma,two toma,5.880056414907352e-5,dax,"0.8,0.99",low_size_high_color,noun,High semantic value,other
+3,blue toma,two toma,5.880056414907352e-5,dax,"0.8,0.99",low_size_high_color,noun,High semantic value,other
+3,blue toma,two dax,2.0586487401589533e-5,dax,"0.8,0.99",low_size_high_color,noun,High semantic value,other
+4,blue dax,two toma,0.4117171371056771,dax,"0.99,0.8",high_size_low_color,noun,Low semantic value,lure
+4,red dax,two dax,0.29407233823622436,dax,"0.99,0.8",high_size_low_color,noun,Low semantic value,other
+4,blue dax,two dax,0.29407233823622436,dax,"0.99,0.8",high_size_low_color,noun,Low semantic value,target
+4,red toma,two toma,5.879976814614065e-5,dax,"0.99,0.8",high_size_low_color,noun,Low semantic value,other
+4,blue toma,two toma,5.879976814614065e-5,dax,"0.99,0.8",high_size_low_color,noun,Low semantic value,other
+4,blue toma,two dax,2.0586885582141682e-5,dax,"0.99,0.8",high_size_low_color,noun,Low semantic value,other
