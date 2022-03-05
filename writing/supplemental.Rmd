@@ -187,19 +187,10 @@ cont_semantics_inference <- map_dfr(cont_semantics_utterances %>% pull(all_vals)
                                        data = .x),
                                .id = "ids") %>%
   left_join(cont_semantics_utterances, by = "ids") %>%
-  as_tibble() %>%
-  mutate(utterance_cond = if_else(utterance == "dax", "noun", "adjective noun"),
-         utterance_cond = factor(utterance_cond, levels = c("noun", "adjective noun")),
-         semantic_val = if_else(label == "high_size_low_color", "Low semantic value", "High semantic value"),
-         semantic_val = factor(semantic_val, levels = c("Low semantic value", "High semantic value")),
-         choice = case_when(obj == "blue dax" & world_string == "two dax" ~ "target",
-                            obj == "blue dax" & world_string == "two toma" ~ "lure",
-                            obj != "blue dax" ~ "other")) %>%
+  as_tibble()  %>%
   select(-all_vals)
 
-# Above: Our webppl code is set up to do both color and size with different semantic values, but we're only doing
-# inference over "color" values here as a demonstration, so we can relabel to just "low semantic val" and 
-# "high semantic val".
+
 
 write_csv(cont_semantics_inference, here("webppl/model_estimates/continuous_semantics.csv"))
 ```
@@ -209,8 +200,19 @@ cont_semantics_inference <- read_csv(here("webppl/model_estimates/continuous_sem
                                  show_col_types = FALSE)
 ```
 
-```{r summarise-continuous}
+```{r continuous-sem-plot}
+# Our webppl code is set up to do both color and size with different semantic values, but we're only doing
+# inference over "color" values here as a demonstration, so we can relabel to just "low semantic strength" and 
+# "high semantic strength".
 cont_semantics_inference %>%
+  mutate(utterance_cond = if_else(utterance == "dax", "noun", "adjective noun"),
+         utterance_cond = factor(utterance_cond, levels = c("noun", "adjective noun")),
+         semantic_val = if_else(label == "high_size_low_color", 
+                                "Low semantic strength", "High semantic strength"),
+         semantic_val = factor(semantic_val, levels = c("Low semantic strength", "High semantic strength")),
+         choice = case_when(obj == "blue dax" & world_string == "two dax" ~ "target",
+                            obj == "blue dax" & world_string == "two toma" ~ "lure",
+                            obj != "blue dax" ~ "other")) %>%
   group_by(utterance_cond, semantic_val, choice) %>%
   summarise(prob = sum(prob)) %>%
   filter(choice != "other") %>%
@@ -228,9 +230,11 @@ cont_semantics_inference %>%
   theme(legend.position = "none")
 ```
 
-Above we show the
+@degen_when_2020 capture asymmetries in description of size and color by positing that different features have different semantic strength. They posit that color has stronger semantics than size, such that "red table" is a better literal description of a small red table than "small table" is, and find that a version of RSA using these continuous semantics explains people's tendency to mention color more often than size in a variety of tasks. Could their model explain the asymmetry we find between color and size in Experiment 1? 
 
-Reaction Times
+In Experiment 1, we found that people more consistently choose the target using contrastive inferences about size than color. We incorporated their continuous semantics into our RSA model of referent choice, which reasons over possible lexicons. In Figure \ref{fig:continuous-sem-plot} we show the difference in referent choice when a feature has low semantic strength (0.8) compared to high semantic strength (0.99). A feature with low semantic strength results in a weaker contrastive inference (reduced choice of the target in the *adjective noun* trials) compared to a feature with high semantic strength. @degen_when_2020 find that color has stronger semantics than size, which would result in a stronger contrastive inference about referent choice when color adjectives are used. This is not what we find: people make stronger contrastive inferences about referent choice when *size* adjectives are used. Thus, while a model with continuous semantics could in principle explain the asymmetry we find, it would need to have stronger semantic values for size than color. We note that while the same continuous semantics do not explain both our data and the production data from @degen_when_2020, neither does the model we propose explain the production data. We leave it to future work to form a more complete account of color-size asymmetries in both production and comprehension.
+
+Experiment 2 Reaction Times
 
 ```{r e2-read-data}
 e2_color_data <- read_csv(here("data/exp2/color.csv"), 
