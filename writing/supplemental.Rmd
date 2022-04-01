@@ -323,7 +323,8 @@ ggplot(e2_mean_data, aes(x = adjective, color = condition)) +
                       position = position_dodge(.5)) +
   ylab("log reaction time") +
   xlab("Utterance type") +
-  scale_color_ptol()
+  scale_color_ptol() +
+  theme(legend.position = c(.2,.8))
 ```
 
 \section{Experiment 3}
