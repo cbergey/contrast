@@ -156,7 +156,7 @@ var pragmaticListener = function(alpha, utterance, worlds){
   }})
 }
 
-var alphaPrior = Gamma({shape: 1, scale: 1})
+var alphaPrior = Gamma({shape: 2, scale: 2})
 
 var gaussianKernel = function(prevVal) {
   return Gaussian({mu: prevVal, sigma: .5});
