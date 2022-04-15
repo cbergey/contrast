@@ -143,11 +143,24 @@ walk2(c("e1full_adj", "e1full_size","e1full_uniquetarget","e1full_adj_size",
         "conditionsize:searchtypeuniquetarget", 
         "adjTRUE:conditionsize:searchtypeuniquetarget"),  
       ~make_text_vars(full_model, .x, .y))
+
+full_model %>%
+  select(-effect, -group) %>%
+  mutate(term = case_when(
+    term == "adjTRUE" ~ "adjective (vs. no adjective)",
+    term == "conditionsize" ~ "size (vs. color)",
+    term == "searchtypeuniquetarget" ~ "unique target display (vs. contrastive display)",
+    term == "adjTRUE:conditionsize" ~ "adjective * size",
+    term == "adjTRUE:searchtypeuniquetarget" ~ "adjective * unique target",
+    term == "conditionsize:searchtypeuniquetarget" ~ "size * unique target",
+    term == "adjTRUE:conditionsize:searchtypeuniquetarget" ~ "adjective * size * unique target"
+  )) %>%
+  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
+            caption = "Full model of target choice from Experiment 1.")
 ```
 
-In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). 
+In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). There was an interaction between the presence of an adjective and the type of adjective, such that people were especially likely to choose the target when there was a size adjective in the utterance ($\beta_{adjective*size} =$ `r e1full_adj_size_estimate`, $t =$ `r e1full_adj_size_statistic`, $p =$ `r e1full_adj_size_p.value`). There was a three-way interaction between the presence of an adjective, the type of adjective, and the search type such that the contrastive strength of size over color was weaker in the unique target trials than in the contrastive trials ($\beta_{adjective*size*unique} =$ `r e1full_adj_size_uniquetarget_estimate`, $t =$ `r e1full_adj_size_uniquetarget_statistic`, $p =$ `r e1full_adj_size_uniquetarget_p.value`).
 
-** Add more text here with effects of adj*size and three-way interaction
 
 ```{r e1-plot, fig.width = 5, fig.height = 4.5, fig.cap = "\\label{fig:e1-plot}Referent choice in both the contrastive display trials and the unique target display trials. "}
 
@@ -297,6 +310,24 @@ walk2(c("e2_adj", "e2_search_same", "e2_search_contrast", "e2_adj_contrast", "e2
       c("adjectiveadjective noun", "searchtypesame", "searchtypecontrast",
         "adjectiveadjective noun:searchtypecontrast", "adjectiveadjective noun:searchtypesame"), 
       ~ make_text_vars(e2_model, .x, .y))
+```
+
+```{r e2-table}
+e2_model %>%
+  select(-effect, -group) %>%
+  mutate(term = case_when(
+    term == "conditionsize" ~ "adjective (vs. no adjective)",
+    term == "conditionsize" ~ "size (vs. color)",
+    term == "searchtypeuniquetarget" ~ "unique target display (vs. contrastive display)",
+    term == "adjTRUE:conditionsize" ~ "adjective * size",
+    term == "adjTRUE:searchtypeuniquetarget" ~ "adjective * unique target",
+    term == "conditionsize:searchtypeuniquetarget" ~ "size * unique target",
+    term == "adjTRUE:conditionsize:searchtypeuniquetarget" ~ "adjective * size * unique target"
+  )) %>%
+  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
+            caption = "Full model of target choice from Experiment 1.")
+
+
 ```
 
 ```{r rt-model}
