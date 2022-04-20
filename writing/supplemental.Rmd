@@ -143,10 +143,15 @@ walk2(c("e1full_adj", "e1full_size","e1full_uniquetarget","e1full_adj_size",
         "conditionsize:searchtypeuniquetarget", 
         "adjTRUE:conditionsize:searchtypeuniquetarget"),  
       ~make_text_vars(full_model, .x, .y))
+```
+
+```{r e1-table}
 
 full_model %>%
-  select(-effect, -group) %>%
+  select(-effect, -group, -std.error) %>%
+  rename("p-value" = "p.value") %>%
   mutate(term = case_when(
+    term == "Intercept" ~ "intercept",
     term == "adjTRUE" ~ "adjective (vs. no adjective)",
     term == "conditionsize" ~ "size (vs. color)",
     term == "searchtypeuniquetarget" ~ "unique target display (vs. contrastive display)",
@@ -159,7 +164,7 @@ full_model %>%
             caption = "Full model of target choice from Experiment 1.")
 ```
 
-In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). There was an interaction between the presence of an adjective and the type of adjective, such that people were especially likely to choose the target when there was a size adjective in the utterance ($\beta_{adjective*size} =$ `r e1full_adj_size_estimate`, $t =$ `r e1full_adj_size_statistic`, $p =$ `r e1full_adj_size_p.value`). There was a three-way interaction between the presence of an adjective, the type of adjective, and the search type such that the contrastive strength of size over color was weaker in the unique target trials than in the contrastive trials ($\beta_{adjective*size*unique} =$ `r e1full_adj_size_uniquetarget_estimate`, $t =$ `r e1full_adj_size_uniquetarget_statistic`, $p =$ `r e1full_adj_size_uniquetarget_p.value`).
+In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display) (Table \ref{tab:e1-table}). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). There was an interaction between the presence of an adjective and the type of adjective, such that people were especially likely to choose the target when there was a size adjective in the utterance ($\beta_{adjective*size} =$ `r e1full_adj_size_estimate`, $t =$ `r e1full_adj_size_statistic`, $p =$ `r e1full_adj_size_p.value`). There was a three-way interaction between the presence of an adjective, the type of adjective, and the search type such that the contrastive strength of size over color was stronger in the contrastive trials than the unique target trials ($\beta_{adjective*size*unique} =$ `r e1full_adj_size_uniquetarget_estimate`, $t =$ `r e1full_adj_size_uniquetarget_statistic`, $p =$ `r e1full_adj_size_uniquetarget_p.value`).
 
 
 ```{r e1-plot, fig.width = 5, fig.height = 4.5, fig.cap = "\\label{fig:e1-plot}Referent choice in both the contrastive display trials and the unique target display trials. "}
@@ -188,7 +193,7 @@ e1_mean_data %>%
 
 Figure \ref{fig:e1-plot} shows referent choice in both the unique target display trials and the contrastive display trials. Unique target displays had one unique referent (the target) and two identical distractors that differed from it both in shape and the critical feature. Contrastive displays had a target, a contrastive pair which matched the target in shape but had a different critical feature, and a lure which matched the target on the critical shape but differed from it on the critical feature.
 
-\section{Experiment 2}
+
 
 ```{r webppl-continuous, eval = FALSE}
 cont_semantics_utterances <- tibble(utterance = c("dax", "blue dax"),
@@ -218,10 +223,14 @@ cont_semantics_inference <- read_csv(here("webppl/model_estimates/continuous_sem
                                  show_col_types = FALSE)
 ```
 
-```{r continuous-sem-plot, fig.width = 5, fig.height = 3, fig.cap = "\\label{fig:continuous-sem-plot}"}
-# Our webppl code is set up to do both color and size with different semantic values, but we're only doing
-# inference over "color" values here as a demonstration, so we can relabel to just "low semantic strength" and 
-# "high semantic strength".
+\subsection{Modeling Experiment 1 with continuous semantics}
+
+@degen_when_2020 capture asymmetries in description of size and color by positing that different features have different semantic strength. They posit that color has stronger semantics than size, such that "red table" is a better literal description of a small red table than "small table" is. Under these assumptions, RSA using these continuous semantics explains people's tendency to mention color more often than size in a variety of tasks. Can their model explain the asymmetry we find between color and size in Experiment 1? 
+
+In Experiment 1, we found that people more consistently choose the target using contrastive inferences about size than color. We incorporated their continuous semantics into our RSA model of referent choice, which reasons over possible lexicons. In Figure \ref{fig:continuous-sem-plot} we show the difference in referent choice when a feature has low semantic strength (0.8) compared to high semantic strength (0.99). A feature with low semantic strength results in a weaker contrastive inference (reduced choice of the target in the *adjective noun* trials) compared to a feature with high semantic strength. @degen_when_2020 find that color has stronger semantics than size, which would result in a stronger contrastive inference about referent choice when color adjectives are used. This is not what we find: people make stronger contrastive inferences about referent choice when *size* adjectives are used. Thus, while a model with continuous semantics could in principle explain the asymmetry we find, it would need to have stronger semantic values for size than color. We note that while the same continuous semantics do not explain both our data and the production data from @degen_when_2020, neither does the model we propose explain the production data. We leave it to future work to form a more complete account of color-size asymmetries in both production and comprehension.
+
+```{r continuous-sem-plot, fig.width = 5, fig.height = 4.5, fig.cap = "\\label{fig:continuous-sem-plot}Results of modeling target choice in Experiment 1 using continuous semantics. Stronger continuous semantics predict higher choice of the target, while weaker continuous semantics predict lower choice of the target. "}
+
 cont_semantics_inference %>%
   mutate(utterance_cond = if_else(utterance == "dax", "noun", "adjective noun"),
          utterance_cond = factor(utterance_cond, levels = c("noun", "adjective noun")),
@@ -246,13 +255,13 @@ cont_semantics_inference %>%
           position = position_dodge(.5),
           method = list(dl.trans(y = y - 0.5), "last.points", cex=.7)) +
   theme(legend.position = "none")
+
+# Our webppl code is set up to do both color and size with different semantic values, but we're only doing
+# inference over "color" values here as a demonstration, so we can relabel to just "low semantic strength" and 
+# "high semantic strength".
 ```
 
-@degen_when_2020 capture asymmetries in description of size and color by positing that different features have different semantic strength. They posit that color has stronger semantics than size, such that "red table" is a better literal description of a small red table than "small table" is. Under these assumptions, RSA using these continuous semantics explains people's tendency to mention color more often than size in a variety of tasks. Can their model explain the asymmetry we find between color and size in Experiment 1? 
-
-In Experiment 1, we found that people more consistently choose the target using contrastive inferences about size than color. We incorporated their continuous semantics into our RSA model of referent choice, which reasons over possible lexicons. In Figure \ref{fig:continuous-sem-plot} we show the difference in referent choice when a feature has low semantic strength (0.8) compared to high semantic strength (0.99). A feature with low semantic strength results in a weaker contrastive inference (reduced choice of the target in the *adjective noun* trials) compared to a feature with high semantic strength. @degen_when_2020 find that color has stronger semantics than size, which would result in a stronger contrastive inference about referent choice when color adjectives are used. This is not what we find: people make stronger contrastive inferences about referent choice when *size* adjectives are used. Thus, while a model with continuous semantics could in principle explain the asymmetry we find, it would need to have stronger semantic values for size than color. We note that while the same continuous semantics do not explain both our data and the production data from @degen_when_2020, neither does the model we propose explain the production data. We leave it to future work to form a more complete account of color-size asymmetries in both production and comprehension.
-
-\subsection{Experiment 2 Reaction Times}
+\section{Experiment 2}
 
 ```{r e2-read-data}
 e2_color_data <- read_csv(here("data/exp2/color.csv"), 
@@ -312,50 +321,31 @@ walk2(c("e2_adj", "e2_search_same", "e2_search_contrast", "e2_adj_contrast", "e2
       ~ make_text_vars(e2_model, .x, .y))
 ```
 
+\subsection{Experiment 2 Prevalence Judgments}
+The full regression of prevalence judgments, also reported in the main text, is in Table \ref{tab:e2-table}.
+
 ```{r e2-table}
 e2_model %>%
-  select(-effect, -group) %>%
+  select(term, estimate, statistic, p.value) %>%
+  rename("p-value" = "p.value") %>%
   mutate(term = case_when(
-    term == "conditionsize" ~ "adjective (vs. no adjective)",
+    term == "(Intercept)" ~ "intercept",
+    term == "adjectiveadjective noun" ~ "adjective (vs. no adjective)",
     term == "conditionsize" ~ "size (vs. color)",
-    term == "searchtypeuniquetarget" ~ "unique target display (vs. contrastive display)",
-    term == "adjTRUE:conditionsize" ~ "adjective * size",
-    term == "adjTRUE:searchtypeuniquetarget" ~ "adjective * unique target",
-    term == "conditionsize:searchtypeuniquetarget" ~ "size * unique target",
-    term == "adjTRUE:conditionsize:searchtypeuniquetarget" ~ "adjective * size * unique target"
+    term == "searchtypecontrast" ~ "within-category contrast display (vs. between-category contrast)",
+    term == "searchtypesame" ~ "same feature display (vs. between-category contrast)",
+    term == "conditionsize:adjectiveadjective noun" ~ "size * adjective",
+    term == "conditionsize:searchtypecontrast" ~ "size * within-category contrast display",
+    term == "conditionsize:searchtypesame" ~ "size * same feature display",
+    term == "adjectiveadjective noun:searchtypecontrast" ~ "adjective * within-category contrast display",
+    term == "adjectiveadjective noun:searchtypesame" ~ "adjective * same feature display",
+    term == "conditionsize:adjectiveadjective noun:searchtypecontrast" ~ "size * adjective * within-category contrast display",
+    term == "conditionsize:adjectiveadjective noun:searchtypesame" ~ "size * adjective * same feature display"
   )) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Full model of target choice from Experiment 1.")
+            caption = "Full model of prevalence judgments from Experiment 2.")
 
 
-```
-
-```{r rt-model}
-rtmodel <- lmer(log_rt ~ adjective * searchtype + condition +
-                (1 | subid),
-              control = lmerControl(optimizer = "bobyqa"),
-              data = e2_subj_data) %>%
-  tidy() %>%
-  filter(effect == "fixed") %>%
-  mutate(p.value = printp(p.value))
-
-e2_rt_means <- e2_subj_data %>%
-  group_by(searchtype, adjective, condition) %>%
-  tidyboot_mean(log_rt)
-```
-
-Thus, participants treated all adjectives as marked, and inferred lower typicality, regardless of whether they could felicitiously be interpreted as contrasting between potential target referents. But were participants nonetheless sensitive to this information in their response times? We investigated this question by analyzing participants' time to advance after seeing the aliens' referential exchange. Though this task was not speeded, we hypothesized that participants would advance more quickly after seeing referential exchanges that were easier to process. After dropping all response times less than 1 second and longer than 10 seconds, and log transforming them because of the right skew in response time data, we predicted participants' time to advance on each trial of the experiment from utterance type, context type, critical adjective type, and the interaction between utterance type and context type (\texttt{log(rt) $\sim$ adjective * search + type + (1 |subj)}). This model showed a reliable effect of utterance type ($\beta_{adjective} =$ , $t =$ , $p$ )--participants were faster when an a descriptor was provided despite having to process an additional word. There was no main effect of critical adjective type ($\beta_{size} =$ , $t =$ , $p =$ ), nor context type ($\beta_{contrast} =$ , $t =$ , $p =$ ; $\beta_{same} =$ , $t =$ , $p =$ ), but the interactions between utterance type and context type trended towards significance for both non-contrast searches ($\beta_{adjective*contrast} =$ , $t =$ , $p =$ ; $\beta_{adjective*same} =$ , $t =$ , $p =$ ). Directionally, these results indicate that participants took longer to process utterances which were under-described (within-category contrast trials with no adjective) than those with appropriately no description, and processed trials with an appropriate level of description (contrast trials with an adjective) more quickly than those with superfluous description.
-
-```{r rt-plot-inference, fig.width = 6, fig.height = 4.5}
-fig.cap="The log reaction time participants took to advance after seeing the referential exchange, by condition."
-ggplot(e2_mean_data, aes(x = adjective, color = condition)) +
-  facet_wrap(~searchtype) +
-  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper),
-                      position = position_dodge(.5)) +
-  ylab("log reaction time") +
-  xlab("Utterance type") +
-  scale_color_ptol() +
-  theme(legend.position = c(.2,.8))
 ```
 
 \section{Experiment 3}
@@ -458,7 +448,77 @@ make_text_vars(e3_full_model_no_alien, "e3_noalien_adj", "utttypeadj")
 
 ```
 
-In addition to the regressions reported in the manuscript, we two pre-registered, targeted regressions to test the effect of utterance type to more specifically in case these effects were unclear in the maximal models. First, we filtered to adjective and no adjective trials and fit a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Participants' prevalence judgments were significantly lower when an adjective was used in the utterance ($\beta =$ `r e3_adj_no_alien_estimate`, $t =$ `r e3_adj_no_alien_statistic`, $p =$ `r e3_adj_no_alien_p.value`). Second, we included all trials in a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject. Utterances without an adjective resulted in significantly higher prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_noadj_estimate`, $t =$ `r e3_utt_model_noadj_statistic`, $p =$ `r e3_utt_model_noadj_p.value`), and utterances with an adjective did not result in significantly different prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_adj_estimate`, $t =$ `r e3_utt_model_adj_statistic`, $p =$ `r e3_utt_model_adj_p.value`).
+The full regression predicting Experiment 3 prevalence judgments, also reported in the main text, is shown in Table \ref{tab:e3-full}. The regression predicting Experiment 3 prevalence judgments among only adjective utterances and no adjective utterances (excluding alien utterance trials), also reported in the main text, is shown in Table \ref{tab:e3-full-no-alien}.
+
+In addition to the regressions reported in the manuscript, we two pre-registered, targeted regressions to test the effect of utterance type to more specifically in case these effects were unclear in the maximal models. First, we filtered to adjective and no adjective trials and fit a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject (Table \ref{tab:e3-adj-no-alien}). Participants' prevalence judgments were significantly lower when an adjective was used in the utterance ($\beta =$ `r e3_adj_no_alien_estimate`, $t =$ `r e3_adj_no_alien_statistic`, $p =$ `r e3_adj_no_alien_p.value`). Second, we included all trials in a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject (Table \ref{tab:e3-adj}). Utterances without an adjective resulted in significantly higher prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_noadj_estimate`, $t =$ `r e3_utt_model_noadj_statistic`, $p =$ `r e3_utt_model_noadj_p.value`), and utterances with an adjective did not result in significantly different prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_adj_estimate`, $t =$ `r e3_utt_model_adj_statistic`, $p =$ `r e3_utt_model_adj_p.value`).
+
+```{r e3-full}
+e3_full_model %>%
+  select(-std.error, -df) %>%
+  rename("p-value" = "p.value") %>%
+  mutate(term = case_when(
+    term == "(Intercept)" ~ "intercept",
+    term == "utttypeadj" ~ "adjective utterance (vs. alien utterance)",
+    term == "utttypenoadj" ~ "no adjective utterance (vs. alien utterance)",
+    term == "searchtypecontrast" ~ "within-category contrast display (vs. between-category)",
+    term == "conditionsize" ~ "size (vs. color)",
+    term == "utttypenoadj:searchtypecontrast" ~ "no adjective utterance * within-category contrast display",
+    term == "utttypeadj:searchtypecontrast" ~ "adjective utterance * within-category contrast display",
+    term == "utttypenoadj:conditionsize" ~ "no adjective utterance * size",
+    term == "utttypeadj:conditionsize" ~ "adjective utterance * size",
+    term == "searchtypecontrast:conditionsize" ~ "within-category contrast display",
+    term == "utttypenoadj:searchtypecontrast:conditionsize" ~ "no adjective utterance * within-category contrast display * size"
+  )) %>%
+  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
+            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type in Experiment 3.")
+
+```
+
+```{r e3-full-no-alien}
+e3_full_model_no_alien %>%
+  select(-std.error, -df) %>%
+  rename("p-value" = "p.value") %>%
+  mutate(term = case_when(
+    term == "(Intercept)" ~ "intercept",
+    term == "utttypeadj" ~ "adjective utterance (vs. no adjective)",
+    term == "searchtypecontrast" ~ "within-category contrast display (vs. between-category)",
+    term == "conditionsize" ~ "size (vs. color)",
+    term == "utttypeadj:searchtypecontrast" ~ "adjective utterance * within-category contrast display",
+    term == "utttypeadj:conditionsize" ~ "adjective utterance * size",
+    term == "searchtypecontrast:conditionsize" ~ "within-category contrast display",
+    term == "utttypeadj:searchtypecontrast:conditionsize" ~ "no adjective utterance * within-category contrast display * size"
+  )) %>%
+  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
+            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type only among adjective and no adjective utterances (excluding alien utterances) in Experiment 3.")
+
+```
+
+```{r e3-adj-no-alien}
+e3_utt_model_no_alien %>%
+  select(-effect, -group) %>%
+  rename("p-value" = "p.value") %>%
+  mutate(term = case_when(
+    term == "(Intercept)" ~ "intercept",
+    term == "utttypeadj" ~ "adjective utterance (vs. no adjective utterance)"
+  )) %>%
+  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
+            caption = "Regression predicting prevalence judgments from presence of an adjective in the utterance (excluding alien language utterances) in Experiment 3.")
+
+```
+
+```{r e3-adj}
+e3_utt_model %>%
+  select(-effect, -group) %>%
+  rename("p-value" = "p.value") %>%
+  mutate(term = case_when(
+    term == "(Intercept)" ~ "intercept",
+    term == "utttypeadj" ~ "adjective utterance (vs. alien utterance)",
+    term == "utttypenoadj" ~ "no adjective utterance (vs. alien utterance)"
+  )) %>%
+  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
+            caption = "Regression predicting prevalence judgments from utterance type in Experiment 3.")
+
+```
 
 \section*{References}
 
