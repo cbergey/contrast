@@ -124,6 +124,9 @@ e1_mean_data <- e1_data %>%
   ungroup() %>%
   mutate(adjective_used = factor(adj, labels = c("noun", "adjective noun"))) 
 
+# adj is presence of adjective in utterance (noun vs adjective noun)
+# condition is adjective type (size vs color)
+# searchtype is the display type (contrast vs unique target)
 
 # full model to report in supplemental, pre-reg'd
 # full adj * searchtype random effect model didn't converge. 
@@ -152,16 +155,16 @@ full_model %>%
   rename("p-value" = "p.value") %>%
   mutate(term = case_when(
     term == "Intercept" ~ "intercept",
-    term == "adjTRUE" ~ "adjective (vs. no adjective)",
-    term == "conditionsize" ~ "size (vs. color)",
-    term == "searchtypeuniquetarget" ~ "unique target display (vs. contrastive display)",
+    term == "adjTRUE" ~ "utterance type: adjective (vs. no adjective)",
+    term == "conditionsize" ~ "adjective type: size (vs. color)",
+    term == "searchtypeuniquetarget" ~ "display type: unique target (vs. contrastive)",
     term == "adjTRUE:conditionsize" ~ "adjective * size",
     term == "adjTRUE:searchtypeuniquetarget" ~ "adjective * unique target",
     term == "conditionsize:searchtypeuniquetarget" ~ "size * unique target",
     term == "adjTRUE:conditionsize:searchtypeuniquetarget" ~ "adjective * size * unique target"
   )) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Full model of target choice from Experiment 1.")
+            caption = "Full model of target choice from Experiment 1. Model specification is chose_target ~ utterance_type * adjective_type * display_type + (1 + utterance_type | subject).")
 ```
 
 In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display) (Table \ref{tab:e1-table}). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). There was an interaction between the presence of an adjective and the type of adjective, such that people were especially likely to choose the target when there was a size adjective in the utterance ($\beta_{adjective*size} =$ `r e1full_adj_size_estimate`, $t =$ `r e1full_adj_size_statistic`, $p =$ `r e1full_adj_size_p.value`). There was a three-way interaction between the presence of an adjective, the type of adjective, and the search type such that the contrastive strength of size over color was stronger in the contrastive trials than the unique target trials ($\beta_{adjective*size*unique} =$ `r e1full_adj_size_uniquetarget_estimate`, $t =$ `r e1full_adj_size_uniquetarget_statistic`, $p =$ `r e1full_adj_size_uniquetarget_p.value`).
@@ -297,7 +300,7 @@ e2_subj_data <- e2_data %>%
   mutate(searchtype = if_else(searchtype == "monochrome" |
                                 searchtype == "samesize",
                                       "same", searchtype)) %>%
-  mutate(rtsearch = rtsearch - 6500) %>%
+  mutate(rtsearch = rtsearch - 6500) %>% # delay before people could select
   mutate(log_rt = log(rtsearch)) %>%
   mutate(adjective = if_else(adjective == TRUE, "adjective noun", "noun"),
          adjective = factor(adjective, levels = c("noun", "adjective noun")),
@@ -330,10 +333,10 @@ e2_model %>%
   rename("p-value" = "p.value") %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
-    term == "adjectiveadjective noun" ~ "adjective (vs. no adjective)",
-    term == "conditionsize" ~ "size (vs. color)",
-    term == "searchtypecontrast" ~ "within-category contrast display (vs. between-category contrast)",
-    term == "searchtypesame" ~ "same feature display (vs. between-category contrast)",
+    term == "adjectiveadjective noun" ~ "utterance type: adjective (vs. no adjective)",
+    term == "conditionsize" ~ "adjective type: size (vs. color)",
+    term == "searchtypecontrast" ~ "context: within-category contrast display (vs. between-category contrast)",
+    term == "searchtypesame" ~ "context: same feature display (vs. between-category contrast)",
     term == "conditionsize:adjectiveadjective noun" ~ "size * adjective",
     term == "conditionsize:searchtypecontrast" ~ "size * within-category contrast display",
     term == "conditionsize:searchtypesame" ~ "size * same feature display",
@@ -343,7 +346,7 @@ e2_model %>%
     term == "conditionsize:adjectiveadjective noun:searchtypesame" ~ "size * adjective * same feature display"
   )) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Full model of prevalence judgments from Experiment 2.")
+            caption = "Full model of prevalence judgments from Experiment 2. Model specification is percentage ~ adjective_type * utterance_type * context_type + (utterance_type | subject).")
 
 
 ```
@@ -458,10 +461,10 @@ e3_full_model %>%
   rename("p-value" = "p.value") %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
-    term == "utttypeadj" ~ "adjective utterance (vs. alien utterance)",
-    term == "utttypenoadj" ~ "no adjective utterance (vs. alien utterance)",
-    term == "searchtypecontrast" ~ "within-category contrast display (vs. between-category)",
-    term == "conditionsize" ~ "size (vs. color)",
+    term == "utttypeadj" ~ "utterance type: adjective (vs. alien utterance)",
+    term == "utttypenoadj" ~ "utterance type: no adjective utterance (vs. alien utterance)",
+    term == "searchtypecontrast" ~ "context type: within-category contrast (vs. between-category)",
+    term == "conditionsize" ~ "adjective type: size (vs. color)",
     term == "utttypenoadj:searchtypecontrast" ~ "no adjective utterance * within-category contrast display",
     term == "utttypeadj:searchtypecontrast" ~ "adjective utterance * within-category contrast display",
     term == "utttypenoadj:conditionsize" ~ "no adjective utterance * size",
@@ -470,7 +473,8 @@ e3_full_model %>%
     term == "utttypenoadj:searchtypecontrast:conditionsize" ~ "no adjective utterance * within-category contrast display * size"
   )) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type in Experiment 3.")
+            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type in Experiment 3. Model specification is percentage ~ utterance_type * context_type * adjective_type + 
+         (utterance_type | subject).")
 
 ```
 
@@ -480,16 +484,16 @@ e3_full_model_no_alien %>%
   rename("p-value" = "p.value") %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
-    term == "utttypeadj" ~ "adjective utterance (vs. no adjective)",
-    term == "searchtypecontrast" ~ "within-category contrast display (vs. between-category)",
-    term == "conditionsize" ~ "size (vs. color)",
+    term == "utttypeadj" ~ "utterance type: adjective (vs. no adjective)",
+    term == "searchtypecontrast" ~ "context tyep: within-category contrast (vs. between-category)",
+    term == "conditionsize" ~ "adjective type: size (vs. color)",
     term == "utttypeadj:searchtypecontrast" ~ "adjective utterance * within-category contrast display",
     term == "utttypeadj:conditionsize" ~ "adjective utterance * size",
     term == "searchtypecontrast:conditionsize" ~ "within-category contrast display",
     term == "utttypeadj:searchtypecontrast:conditionsize" ~ "no adjective utterance * within-category contrast display * size"
   )) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type only among adjective and no adjective utterances (excluding alien utterances) in Experiment 3.")
+            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type only among adjective and no adjective utterances (excluding alien utterances) in Experiment 3. Model specification is percentage ~ utterance_type * context_type * adjective_type + (utterance_type | subject).")
 
 ```
 
@@ -502,7 +506,7 @@ e3_utt_model_no_alien %>%
     term == "utttypeadj" ~ "adjective utterance (vs. no adjective utterance)"
   )) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from presence of an adjective in the utterance (excluding alien language utterances) in Experiment 3.")
+            caption = "Regression predicting prevalence judgments from presence of an adjective in the utterance (excluding alien language utterances) in Experiment 3. Model specification is percentage ~ utterance_type + (utterance_type | subject). ")
 
 ```
 
@@ -516,7 +520,7 @@ e3_utt_model %>%
     term == "utttypenoadj" ~ "no adjective utterance (vs. alien utterance)"
   )) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from utterance type in Experiment 3.")
+            caption = "Regression predicting prevalence judgments from utterance type in Experiment 3. Model specification is percentage ~ utterance_type + (utterance_type | subject). ")
 
 ```
 
