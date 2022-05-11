@@ -148,13 +148,13 @@ walk2(c("e1full_adj", "e1full_size","e1full_uniquetarget","e1full_adj_size",
       ~make_text_vars(full_model, .x, .y))
 ```
 
-```{r e1-table}
+In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display) (Table \ref{tab:e1-table}). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). There was an interaction between the presence of an adjective and the type of adjective, such that people were especially likely to choose the target when there was a size adjective in the utterance ($\beta_{adjective*size} =$ `r e1full_adj_size_estimate`, $t =$ `r e1full_adj_size_statistic`, $p =$ `r e1full_adj_size_p.value`). There was a three-way interaction between the presence of an adjective, the type of adjective, and the search type such that the contrastive strength of size over color was stronger in the contrastive trials than the unique target trials ($\beta_{adjective*size*unique} =$ `r e1full_adj_size_uniquetarget_estimate`, $t =$ `r e1full_adj_size_uniquetarget_statistic`, $p =$ `r e1full_adj_size_uniquetarget_p.value`).
+
+```{r e1-table, results = "asis"}
 
 full_model %>%
-  select(-effect, -group, -std.error) %>%
-  rename("p-value" = "p.value") %>%
   mutate(term = case_when(
-    term == "Intercept" ~ "intercept",
+    term == "(Intercept)" ~ "intercept",
     term == "adjTRUE" ~ "utterance type: adjective (vs. no adjective)",
     term == "conditionsize" ~ "adjective type: size (vs. color)",
     term == "searchtypeuniquetarget" ~ "display type: unique target (vs. contrastive)",
@@ -163,11 +163,15 @@ full_model %>%
     term == "conditionsize:searchtypeuniquetarget" ~ "size * unique target",
     term == "adjTRUE:conditionsize:searchtypeuniquetarget" ~ "adjective * size * unique target"
   )) %>%
-  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Full model of target choice from Experiment 1. Model specification is chose_target ~ utterance_type * adjective_type * display_type + (1 + utterance_type | subject).")
-```
+  mutate(d = round(oddsratio_to_d(estimate, log = TRUE), 2),
+         d_high = round(oddsratio_to_d(estimate + 1.96 * std.error, log = TRUE), 2),
+         d_low = round(oddsratio_to_d(estimate - 1.96 * std.error, log = TRUE), 2),
+         d_written = glue("{d} [{d_low}, {d_high}]")) %>%
+  select(-std.error, -d, -d_low, -d_high, -effect, -group) %>% 
+  rename(`$z$-value` = statistic, `$p$-value` = p.value, `$d$ [95\\% CI]` = d_written) %>%
+  apa_table(font_size = "footnotesize", caption = "Full model of target choice from Experiment 1. Model specification is chose\\_target $\\sim$ utterance\\_type * adjective\\_type * display\\_type + (1 + utterance\\_type | subject).", escape = FALSE, placement = "h")
 
-In addition to the analyses reported in the main text, we ran a pre-registered linear mixed effects model predicting target choice from the presence of an adjective in the utterance, the adjective type (size or color), and the display type (unique target display or contrastive display) (Table \ref{tab:e1-table}). People were more likely to choose the target if there was an adjective in the utterance ($\beta_{adjective} =$ `r e1full_adj_estimate`, $t =$ `r e1full_adj_statistic`, $p =$ `r e1full_adj_p.value`), and were more overall likely to choose the target on unique target trials ($\beta_{unique} =$ `r e1full_uniquetarget_estimate`, $t =$ `r e1full_uniquetarget_statistic`, $p =$ `r e1full_uniquetarget_p.value`). There was an interaction between the presence of an adjective and the type of adjective, such that people were especially likely to choose the target when there was a size adjective in the utterance ($\beta_{adjective*size} =$ `r e1full_adj_size_estimate`, $t =$ `r e1full_adj_size_statistic`, $p =$ `r e1full_adj_size_p.value`). There was a three-way interaction between the presence of an adjective, the type of adjective, and the search type such that the contrastive strength of size over color was stronger in the contrastive trials than the unique target trials ($\beta_{adjective*size*unique} =$ `r e1full_adj_size_uniquetarget_estimate`, $t =$ `r e1full_adj_size_uniquetarget_statistic`, $p =$ `r e1full_adj_size_uniquetarget_p.value`).
+```
 
 
 ```{r e1-plot, fig.width = 5, fig.height = 4.5, fig.cap = "\\label{fig:e1-plot}Referent choice in both the contrastive display trials and the unique target display trials. "}
@@ -329,8 +333,8 @@ The full regression of prevalence judgments, also reported in the main text, is 
 
 ```{r e2-table}
 e2_model %>%
-  select(term, estimate, statistic, p.value) %>%
-  rename("p-value" = "p.value") %>%
+  select(term, estimate, statistic, p.value, std.error) %>%
+  mutate(estimate = as.numeric(estimate), std.error = as.numeric(std.error)) %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
     term == "adjectiveadjective noun" ~ "utterance type: adjective (vs. no adjective)",
@@ -345,8 +349,13 @@ e2_model %>%
     term == "conditionsize:adjectiveadjective noun:searchtypecontrast" ~ "size * adjective * within-category contrast display",
     term == "conditionsize:adjectiveadjective noun:searchtypesame" ~ "size * adjective * same feature display"
   )) %>%
-  apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Full model of prevalence judgments from Experiment 2. Model specification is percentage ~ adjective_type * utterance_type * context_type + (utterance_type | subject).")
+  mutate(d = round(oddsratio_to_d(estimate, log = FALSE), 2),
+         d_high = oddsratio_to_d(estimate + 1.96 * std.error, log = FALSE),
+         d_low = round(oddsratio_to_d(estimate - 1.96 * std.error, log = FALSE), 2),
+         d_written = glue("{d} [{d_low}, {d_high}]")) %>%
+  select(-std.error, -d, -d_low, -d_high) %>% 
+  rename(`$z$-value` = statistic, `$p$-value` = p.value, `$d$ [95\\% CI]` = d_written) %>%
+  apa_table(font_size = "footnotesize", caption = "Full model of prevalence judgments from Experiment 2. Model specification is percentage $\\sim$ adjective\\_type * utterance\\_type * context\\_type + (utterance\\_type | subject).", escape = FALSE, placement = "h")
 
 
 ```
