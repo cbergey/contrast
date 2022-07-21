@@ -1,6 +1,6 @@
 ---
 title: "\\LARGE Using contrastive inferences to learn about new words and categories"
-author: "\\large \\emph{Claire Bergey and Daniel Yurovsky}"
+author: "\\large \\emph{Claire Augusta Bergey and Daniel Yurovsky}"
 header-includes:
   - \usepackage[section]{placeins}
   - \usepackage{float}
@@ -163,12 +163,8 @@ full_model %>%
     term == "conditionsize:searchtypeuniquetarget" ~ "size * unique target",
     term == "adjTRUE:conditionsize:searchtypeuniquetarget" ~ "adjective * size * unique target"
   )) %>%
-  mutate(d = round(oddsratio_to_d(estimate, log = TRUE), 2),
-         d_high = round(oddsratio_to_d(estimate + 1.96 * std.error, log = TRUE), 2),
-         d_low = round(oddsratio_to_d(estimate - 1.96 * std.error, log = TRUE), 2),
-         d_written = glue("{d} [{d_low}, {d_high}]")) %>%
-  select(-std.error, -d, -d_low, -d_high, -effect, -group) %>% 
-  rename(`$z$-value` = statistic, `$p$-value` = p.value, `$d$ [95\\% CI]` = d_written) %>%
+  select(-std.error, -effect, -group) %>% 
+  rename(`$z$-value` = statistic, `$p$-value` = p.value) %>%
   apa_table(font_size = "footnotesize", caption = "Full model of target choice from Experiment 1. Model specification is chose\\_target $\\sim$ utterance\\_type * adjective\\_type * display\\_type + (1 + utterance\\_type | subject).", escape = FALSE, placement = "h")
 
 ```
@@ -333,8 +329,8 @@ The full regression of prevalence judgments, also reported in the main text, is 
 
 ```{r e2-table}
 e2_model %>%
-  select(term, estimate, statistic, p.value, std.error) %>%
-  mutate(estimate = as.numeric(estimate), std.error = as.numeric(std.error)) %>%
+  select(term, estimate, statistic, p.value) %>%
+  mutate(estimate = as.numeric(estimate)) %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
     term == "adjectiveadjective noun" ~ "utterance type: adjective (vs. no adjective)",
@@ -349,12 +345,7 @@ e2_model %>%
     term == "conditionsize:adjectiveadjective noun:searchtypecontrast" ~ "size * adjective * within-category contrast display",
     term == "conditionsize:adjectiveadjective noun:searchtypesame" ~ "size * adjective * same feature display"
   )) %>%
-  mutate(d = round(oddsratio_to_d(estimate, log = FALSE), 2),
-         d_high = oddsratio_to_d(estimate + 1.96 * std.error, log = FALSE),
-         d_low = round(oddsratio_to_d(estimate - 1.96 * std.error, log = FALSE), 2),
-         d_written = glue("{d} [{d_low}, {d_high}]")) %>%
-  select(-std.error, -d, -d_low, -d_high) %>% 
-  rename(`$z$-value` = statistic, `$p$-value` = p.value, `$d$ [95\\% CI]` = d_written) %>%
+  rename(`$z$-value` = statistic, `$p$-value` = p.value) %>%
   apa_table(font_size = "footnotesize", caption = "Full model of prevalence judgments from Experiment 2. Model specification is percentage $\\sim$ adjective\\_type * utterance\\_type * context\\_type + (utterance\\_type | subject).", escape = FALSE, placement = "h")
 
 
@@ -464,10 +455,9 @@ The full regression predicting Experiment 3 prevalence judgments, also reported 
 
 In addition to the regressions reported in the manuscript, we report two pre-registered, targeted regressions to test the effect of utterance type to more specifically in case these effects were unclear in the maximal models. First, we filtered to adjective and no adjective trials and fit a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject (Table \ref{tab:e3-adj-no-alien}). Participants' prevalence judgments were significantly lower when an adjective was used in the utterance ($\beta =$ `r e3_adj_no_alien_estimate`, $t =$ `r e3_adj_no_alien_statistic`, $p =$ `r e3_adj_no_alien_p.value`). Second, we included all trials in a linear mixed effects model predicting prevalence judgment by utterance type with a random slope of utterance type by subject (Table \ref{tab:e3-adj}). Utterances without an adjective resulted in significantly higher prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_noadj_estimate`, $t =$ `r e3_utt_model_noadj_statistic`, $p =$ `r e3_utt_model_noadj_p.value`), and utterances with an adjective did not result in significantly different prevalence judgments than alien utterances ($\beta =$ `r e3_utt_model_adj_estimate`, $t =$ `r e3_utt_model_adj_statistic`, $p =$ `r e3_utt_model_adj_p.value`).
 
-```{r e3-full}
+```{r e3-full, results = "asis"}
 e3_full_model %>%
   select(-std.error, -df) %>%
-  rename("p-value" = "p.value") %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
     term == "utttypeadj" ~ "utterance type: adjective (vs. alien utterance)",
@@ -481,16 +471,15 @@ e3_full_model %>%
     term == "searchtypecontrast:conditionsize" ~ "within-category contrast display",
     term == "utttypenoadj:searchtypecontrast:conditionsize" ~ "no adjective utterance * within-category contrast display * size"
   )) %>%
+  rename(`$z$-value` = statistic, `$p$-value` = p.value) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type in Experiment 3. Model specification is percentage ~ utterance_type * context_type * adjective_type + 
-         (utterance_type | subject).")
+            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type in Experiment 3. Model specification is percentage $\\sim$ utterance\\_type * context\\_type * adjective\\_type + (utterance\\_type | subject).", escape = FALSE, placement = "h")
 
 ```
 
-```{r e3-full-no-alien}
+```{r e3-full-no-alien, results = "asis"}
 e3_full_model_no_alien %>%
-  select(-std.error, -df) %>%
-  rename("p-value" = "p.value") %>%
+  select(-std.error, -df, -std.error) %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
     term == "utttypeadj" ~ "utterance type: adjective (vs. no adjective)",
@@ -501,35 +490,38 @@ e3_full_model_no_alien %>%
     term == "searchtypecontrast:conditionsize" ~ "within-category contrast display",
     term == "utttypeadj:searchtypecontrast:conditionsize" ~ "no adjective utterance * within-category contrast display * size"
   )) %>%
+  rename(`$z$-value` = statistic, `$p$-value` = p.value) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type only among adjective and no adjective utterances (excluding alien utterances) in Experiment 3. Model specification is percentage ~ utterance_type * context_type * adjective_type + (utterance_type | subject).")
+            caption = "Regression predicting prevalence judgments from utterance type, context type, and adjective type only among adjective and no adjective utterances (excluding alien utterances) in Experiment 3. Model specification is percentage $\\sim$ utterance\\_type * context\\_type * adjective\\_type + (utterance\\_type | subject).", escape = FALSE, placement = "h")
 
 ```
 
-```{r e3-adj-no-alien}
+```{r e3-adj-no-alien, results = "asis"}
 e3_utt_model_no_alien %>%
-  select(-effect, -group) %>%
-  rename("p-value" = "p.value") %>%
+  select(-effect, -group, -df, -std.error) %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
     term == "utttypeadj" ~ "adjective utterance (vs. no adjective utterance)"
   )) %>%
+  rename(`$z$-value` = statistic, `$p$-value` = p.value) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from presence of an adjective in the utterance (excluding alien language utterances) in Experiment 3. Model specification is percentage ~ utterance_type + (utterance_type | subject). ")
+            caption = "Regression predicting prevalence judgments from presence of an adjective in the utterance (excluding alien language utterances) in Experiment 3. Model specification is percentage $\\sim$ utterance\\_type + (utterance\\_type | subject). ", escape = FALSE, placement = "h")
+
 
 ```
 
-```{r e3-adj}
+```{r e3-adj, results = "asis"}
 e3_utt_model %>%
-  select(-effect, -group) %>%
-  rename("p-value" = "p.value") %>%
+  select(-effect, -group, -df, -std.error) %>%
   mutate(term = case_when(
     term == "(Intercept)" ~ "intercept",
     term == "utttypeadj" ~ "adjective utterance (vs. alien utterance)",
     term == "utttypenoadj" ~ "no adjective utterance (vs. alien utterance)"
   )) %>%
+  rename(`$z$-value` = statistic, `$p$-value` = p.value) %>%
   apa_table(format.args = list(na_string = ""), font_size = "footnotesize",
-            caption = "Regression predicting prevalence judgments from utterance type in Experiment 3. Model specification is percentage ~ utterance_type + (utterance_type | subject). ")
+            caption = "Regression predicting prevalence judgments from utterance type in Experiment 3. Model specification is percentage $\\sim$ utterance\\_type + (utterance\\_type | subject). ", escape = FALSE, placement = "h")
+
 
 ```
 
