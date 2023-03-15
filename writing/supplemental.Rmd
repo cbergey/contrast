@@ -36,11 +36,19 @@ library(glue)
 library(directlabels)
 library(ggthemes)
 library(rwebppl)
+library(grid)
+library(gridExtra)
 
 opts_chunk$set(message = FALSE, warning = FALSE, error = FALSE, cache = TRUE, 
                tidy = FALSE, echo = FALSE, fig.width = 3, fig.height = 3)
 
-theme_set(theme_classic(base_size = 12))
+knitr::opts_chunk$set(fig.pos = '!tb', echo = FALSE, cache = TRUE, 
+                      warning = FALSE, message = FALSE, 
+                      sanitize = TRUE, fig.path='figs/', fig.width = 6,
+                      fig.height = 3)
+
+
+theme_set(theme_few(base_size = 10) + theme(legend.position = "none"))
 options(digits=2)
 ```
 
@@ -524,6 +532,169 @@ e3_utt_model %>%
 
 
 ```
+
+```{r combined-analysis}
+e2_to_combine <- e2_subj_data %>%
+  mutate(experiment = 2, 
+         subid = paste0(subid, "2")) %>%
+  filter(searchtype != "same") %>%
+  select(subid, experiment, counter, condition, adjective, searchtype, percentage)
+
+e3_to_combine <- e3_subj_data %>%
+  mutate(experiment = 3,
+         subid = paste0(subid, "3")) %>%
+  filter(adjective != "alien utterance") %>%
+  select(subid, experiment, counter, condition, adjective, searchtype, percentage)
+
+combined_data <- rbind(e2_to_combine, e3_to_combine)
+
+n_subjs_2 <- n_distinct(e2_to_combine$subid)
+n_subjs_3 <- n_distinct(e3_to_combine$subid)
+n_subjs_combined <- n_distinct(combined_data$subid)
+
+combined_model <- lmer(percentage ~ condition * adjective * searchtype +
+                (adjective | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = combined_data) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("combined_adj", "combined_size", "combined_search_contrast", "combined_adj_contrast"), 
+      c("adjectiveadjective noun", "conditionsize", "searchtypecontrast", 
+        "adjectiveadjective noun:searchtypecontrast"), 
+      ~ make_text_vars(combined_model, .x, .y))
+
+combined_mean_data <- combined_data %>%
+  group_by(searchtype, adjective, condition) %>%
+  tidyboot_mean(percentage)
+
+```
+
+```{r combined-separate-adj}
+# just an exploratory check to see if these context differences only show up in adj trials or non-adj trials,
+# considered separately.
+# there's a small effect among only adj trials and a marginal effect among only non-adj trials.
+# it doesn't seem likely that the overall context difference is due to, e.g., 
+# a *typicality* inference when a necessary adjective was omitted. 
+combined_model_all_adj <- lmer(percentage ~ condition * searchtype +
+                (1 | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = combined_data %>% filter(adjective == "adjective noun")) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("combined_all_adj_search_contrast"), 
+      c("searchtypecontrast"), 
+      ~ make_text_vars(combined_model_all_adj, .x, .y))
+
+combined_model_no_adj <- lmer(percentage ~ condition * searchtype +
+                (1 | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = combined_data %>% filter(adjective == "noun")) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("combined_no_adj_search_contrast"), 
+      c("searchtypecontrast"), 
+      ~ make_text_vars(combined_model_no_adj, .x, .y))
+
+```
+
+\section{Combined Analyses of Experiment 2 and 3}
+
+Given that many participants failed the memory check in Experiments 2 and 3 (which was our pre-registered exclusion criterion), we yielded data from fewer participants than expected in our pre-registrations. This means that the analyses of Experiments 2 and 3 may be underpowered to detect subtle effects of context or feature type. Since Experiments 2 and 3 had very similar procedures, we can conduct an exploratory combined analysis comparing the conditions they shared. Combining data from Experiment 2 (N = `r n_subjs_2`) and Experiment 3 (N = `r n_subjs_3`) yields a total sample of `r n_subjs_combined` participants in this combined analysis. Only trials from the conditions that Experiments 2 and 3 share are included in this analysis: two types of referential context (within-category context and between-category context), two types of feature (size and color), and two types of utterance (adjective noun and noun only).
+
+We fit a mixed effects linear regression on the combined data with the same specification as the full models we used for Experiments 2 and 3 in the main text: effects of utterance type, context type, and critical feature and their interactions, and a random slope of utterance type by subject. This model revealed a significant effect of utterance type ($\beta_{adjective} =$ `r combined_adj_estimate`, $t =$ `r combined_adj_statistic`, $p$ `r combined_adj_p.value`): people inferred that a feature was rarer when it was mentioned, consistent with our findings in each experiment separately. Participants' inferences did not significantly differ between color and size adjective conditions ($\beta_{size} =$ `r combined_size_estimate`, $t =$ `r combined_size_statistic`, $p =$ `r combined_size_p.value`). This is also consistent with findings from each experiment. There was a significant effect of context, with people making overall slightly higher prevalence judgments in the within-category context ($\beta_{within} =$ `r combined_search_contrast_estimate`, $t =$ `r combined_search_contrast_statistic`, $p =$ `r combined_search_contrast_p.value`), which was not found in either experiment separately. However, there was not a significant interaction between context and utterance type ($\beta_{within*adjective} =$ `r combined_adj_contrast_estimate`, $t =$ `r combined_adj_contrast_statistic`, $p =$ `r combined_adj_contrast_p.value`), consistent with findings from each experiment. That is, people did not modulate the size of their typicality inferences (the difference between the adjective noun and noun utterance types) based on context type, though there was a baseline difference in prevalence judgments between context types. 
+
+Overall, these results are consistent with what we found in Experiments 2 and 3, with the exception of finding an overall difference in prevalence judgments between context types. However, we did not find an interaction between context type and utterance type, which would demonstrate that participants are trading off between referential utility and typicality when making these inferences. This exploratory combined analysis suggests further research is necessary, as even when combined our data are not definitive about whether potential trade-offs are small or nonexistent.
+
+```{r combined-plot, fig.cap = "Participants' prevalence judgments in combined data from Experiments 2 and 3."}
+
+labels <- rasterGrob(png::readPNG(here("writing/figs/e3_plot_labels.png")), interpolate = TRUE)
+
+plot <- ggplot(combined_mean_data %>% mutate(searchtype = factor(searchtype, levels = c("contrast", "different"))), 
+               aes(x = adjective, y = empirical_stat, 
+                         color = condition, fill = condition)) + 
+  facet_wrap(~ searchtype) +
+  ylab("Prevalence judgment") +
+  xlab("Utterance type") +
+  labs(color = "Adjective type") + 
+  geom_pointrange(aes(ymin = ci_lower, ymax = ci_upper), 
+                  position = position_dodge(.5)) + 
+  geom_hline(aes(yintercept = 50), linetype = "dashed") +
+  scale_color_ptol() +
+  theme(strip.background = element_blank(),
+  strip.text.x = element_blank(),
+  legend.position = "none") 
+
+grid.arrange(labels, plot, nrow = 2,
+             widths = c(1,19),
+             heights = c(2,5),
+             layout_matrix = rbind(c(NA, 1),
+                                   c(2)))
+```
+
+\{Inferring Atypicality with Non-Fruit Novel Stimuli}
+
+The use of alien fruit stimuli in our experiments raises the question of whether people would infer that *non-fruits* are atypical when their color is remarked upon. As noted in the introduction, people remark on the colors of some kinds of objects more than others, perhaps because they more often vary in color [@rubio-fernandez_how_2016]. Because natural objects tend to have stereotypical colors, it is possible that people would not expect the colors of fruits to be remarked upon very often, and thus have a stronger inference of atypicality for fruit than other types of objects. Here, we provide some additional data showing that people still make these inferences for categories about which they likely do not have such an expectation: tetris-shaped blocks.
+
+In this experiment (N = 240), participants 
+
+```{r tetris}
+tetris_data <- read_csv(here("data/supplemental/tetris_data_one_shot.csv"))
+
+tetris_subj_data <- tetris_data %>%
+  mutate(utterance = if_else(colorasked == FALSE, "toma", "blue toma"),
+         context = if_else(diffcolor == TRUE, "different color", "same color"),
+         counter = as.numeric(counter)) %>%
+  mutate(utterance = factor(utterance, levels = c("toma", "blue toma")),
+         context = factor(context, levels = c("different color", "same color")))
+
+tetris_model <- lm(percentage ~ utterance * context,
+              data = tetris_subj_data) %>%
+  tidy() %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("tetris_adj", "tetris_samecolor", "tetris_adj_diffcolor"),
+      c("utteranceblue toma", "contextsame color", "utteranceblue toma:contextsame color"), 
+      ~ make_text_vars(tetris_model, .x, .y))
+
+tetris_mean_data <- tetris_subj_data %>%
+  group_by(context, utterance) %>%
+  tidyboot_mean(percentage)
+```
+
+```{r tetris-plot}
+tetris_labels <- rasterGrob(png::readPNG(here("writing/figs/tetris_plot_labels.png")), interpolate = TRUE)
+
+
+plot <- ggplot(tetris_mean_data, aes(x = utterance, color = context, group = context)) +
+  geom_pointrange(aes(y = empirical_stat, ymin = ci_lower, ymax = ci_upper), 
+                      position = position_dodge(.5)) +
+  facet_wrap(~context) +
+  ylab("Prevalence judgment") +
+  xlab("Utterance type") +
+  scale_color_ptol() +
+  geom_dl(aes(label = context, y = empirical_stat), 
+          position = position_dodge(.5),
+          method = list(dl.trans(x = x + 1, y = y - .7), "first.points", cex=.7)) +
+theme(
+  strip.background = element_blank(),
+  strip.text.x = element_blank(),
+  legend.position = "none")
+
+
+grid.arrange(tetris_labels, plot, nrow = 2,
+             widths = c(1,19),
+             heights = c(2,5),
+             layout_matrix = rbind(c(NA, 1),
+                                   c(2)))
+
+```
+
 
 \section*{References}
 

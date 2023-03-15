@@ -51,5 +51,40 @@ data <- raw_data %>%
   mutate(subid = salt(subid, .seed = 400)) %>%
   mutate(subid = as.numeric(as.factor(subid)))
 
-write_csv(data, here("data/exp2_turk_data.csv"))
+#write_csv(data, here("data/exp2_turk_data.csv"))
+```
+
+```{r process_tetris_data}
+files <- list.files(here("experiments/supplemental/tetris_shape_contrast/raw_data_one_shot"), full.names = T)
+
+read_tetris_file <- function(file) {
+  
+  json_out <- fromJSON(file)
+  id <- json_out$WorkerId
+  
+  raw_data <- json_out$answers$data 
+  
+  #names <- strsplit(raw_data[1], ",")
+  
+  newnames <- c("subid", "counter", "trialtype", "percentage", "colorasked", "diffshape", "diffcolor", "targetshape", "targetcolor", "distractorshape", "distractorcolor", "targetword"," numclicks", "date", "timestamp", "rttrain", "rttest","object1name","object2name","object3name","attnselected")
+ 
+  data <- raw_data[] %>%
+    as_data_frame() %>%
+    separate(value, into = newnames, sep = ",")
+  
+  data <- data %>%
+    mutate(subid = id)
+    
+  data <- data[2:7,]
+}
+
+raw_data <- map(files, read_tetris_file) %>%
+  bind_rows() %>%
+  filter(!is.na(subid)) %>%
+  mutate(percentage=as.numeric(percentage),
+         subid =  salt(subid, .seed = 400)) %>%
+  mutate(subid = as.numeric(as.factor(subid))) %>%
+  as_tibble()
+
+#write_csv(raw_data, here("data/supplemental/tetris_data_one_shot.csv"))
 ```

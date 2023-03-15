@@ -136,6 +136,21 @@ walk2(c("e3_all_adj_contrast"),
 ```
 
 ```{r extra-models, eval = FALSE}
+# below model not pre-registered, introduced in revisions:
+# among contrast displays specifically, do we see an effect of adjective?
+e3_model_all_contrast <- lmer(percentage ~ adjective * condition +
+                (1 | subid),
+              control = lmerControl(optimizer = "bobyqa"),
+              data = e3_subj_data %>% filter(searchtype == "contrast")) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(p.value = printp(p.value))
+
+walk2(c("e3_just_contrast_adj", "e3_just_contrast_size", "e3_just_contrast_adj_size"), 
+      c("adjectiveadjective noun", "conditionsize", "adjectiveadjective noun:conditionsize"), 
+      ~ make_text_vars(e3_model_all_contrast, .x, .y))
+
+
 no_baseline_model <- e3_model_data %>%
   filter(utttype != "noutt") %>%
   lmer(percentage ~ utttype + searchtype  + condition + 
