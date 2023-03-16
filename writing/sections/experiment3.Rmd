@@ -140,6 +140,19 @@ walk2(c("e3_all_adj_contrast"),
       c("searchtypecontrast"), 
       ~ make_text_vars(e3_all_adj_model, .x, .y))
 
+e3_no_adj_model <- e3_model_data %>%
+  filter(utttype != "adj") %>%
+  lmer(percentage ~ searchtype * condition + 
+         (1 | subid), data = .) %>%
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  select(-effect, -group) %>%
+  mutate(p.value = papaja::printp(p.value))
+
+walk2(c("e3_no_adj_contrast"), 
+      c("searchtypecontrast"), 
+      ~ make_text_vars(e3_no_adj_model, .x, .y))
+
 ```
 
 ```{r extra-models, eval = FALSE}
@@ -183,7 +196,7 @@ We began by fitting a pre-registered maximum mixed-effects linear model with eff
 
 Given that interpretation of these results with respect to the alien utterance condition can be difficult, we pre-registered a version of the same full model excluding alien utterance trials with the no adjective utterance type as the reference level. This model revealed a significant effect of utterance type: participants' prevalence judgments were lower when an adjective was used than when it was not ($\beta =$ `r e3_noalien_adj_estimate`, $t =$ `r e3_noalien_adj_statistic`, $p =$ `r e3_noalien_adj_p.value`). No other effects were significant. This replicates the main effect of interest in Experiment 2: when an adjective is used in referring to the object, participants infer that the described feature is less typical of that object's category than when the feature goes unmentioned. It also shows that the possibility that people may discount their typicality judgments based on context (suggested by the marginal interaction described above) is not supported when we compare the adjective and no adjective utterance types directly. In the Supplemental Materials, we report two more pre-registered tests of the effect of utterance type alone on prevalence judgments whose results are consistent with the fuller models reported here.
 
-As in Experiment 2, our test of whether participants' inferences are modulated by context is potentially complicated by people making distinct inferences when an adjective is necessary but *not* used. Thus, we additionally tested whether participants' inferences varied by context among only utterances with an adjective by fitting a model with effects of context and adjective type and their interaction, as well as random slopes by subject (not pre-registered). Participants' inferences did not significantly differ by context ($\beta_{within} =$ `r e3_all_adj_contrast_estimate`, $t_{within} =$ `r e3_all_adj_contrast_statistic`, $p_{within} =$ `r e3_all_adj_contrast_p.value`). Thus, participants' inferences did not significantly differ between contexts, whether tested by the interaction between utterance type and contexts or by the effect of context among only utterances with an adjective.
+As in Experiment 2, our test of whether participants' inferences are modulated by context is potentially complicated by people making distinct inferences when an adjective is necessary but *not* used. Thus, we additionally tested whether participants' inferences varied by context among only trials without an adjective and only trials with an adjective, separately. Testing only trials without an adjective checks directly whether people make higher typicality judgments when an adjective is necessary but not used, compared to when it is not necessary and not used. To check this, we fit a model on only trials with an adjective, with effects of context and feature type and their interaction, as well as random slopes by subject (not pre-registered). Participants' inferences among only utterances without an adjective did not significantly differ by context ($\beta_{within} =$ `r e3_no_adj_contrast_estimate`, $t_{within} =$ `r e3_no_adj_contrast_statistic`, $p_{within} =$ `r e3_no_adj_contrast_p.value`). In the same way, we tested whether people's inferences varied by context among only trials with an adjective: this is a test of context effects that could not have been caused (or masked) by people's inferences about adjective omission. Participants' inferences among only utterances with an adjective did not significantly differ by context ($\beta_{within} =$ `r e3_all_adj_contrast_estimate`, $t_{within} =$ `r e3_all_adj_contrast_statistic`, $p_{within} =$ `r e3_all_adj_contrast_p.value`). Thus, participants' inferences did not significantly differ between contexts, whether tested by the interaction between utterance type and contexts or by the effect of context among only utterances with or without an adjective.
 
 ```{r e3-rsa, eval = FALSE}
 e3_null_inference <- webppl(program_file = 

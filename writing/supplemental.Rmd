@@ -1,5 +1,5 @@
 ---
-title: "\\LARGE Using contrastive inferences to learn about new words and categories"
+title: "\\LARGE Supplemental Materials: Using contrastive inferences to learn about new words and categories"
 author: "\\large \\emph{Claire Augusta Bergey and Daniel Yurovsky}"
 header-includes:
   - \usepackage[section]{placeins}
