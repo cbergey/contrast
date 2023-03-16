@@ -686,7 +686,7 @@ grid.arrange(labels, plot, nrow = 2,
                                    c(2)))
 ```
 
-\{Inferring Atypicality with Non-Fruit Novel Stimuli}
+\section{Inferring Atypicality with Non-Fruit Novel Stimuli}
 
 The use of alien fruit stimuli in our experiments raises the question of whether people would infer that *non-fruits* are atypical when their color is remarked upon. As noted in the introduction, people remark on the colors of some kinds of objects more than others, perhaps because they more often vary in color [@rubio-fernandez_how_2016]. Because fruits tend to have stereotypical colors, it is possible that people would not expect the colors of fruits to be remarked upon very often, and thus have a stronger inference of atypicality for fruit than other types of objects. Here, we provide some additional data showing that people still make these inferences for categories about which they likely do not have such an expectation: block shapes.
 
@@ -748,7 +748,7 @@ The main question of interest is whether people infer that a color is rarer when
 ## Discussion
 We found that when a block object is referred to as "the blue toma" rather than "the toma," people think tomas are less likely to be blue in general. People's judgments also did not significantly differ depending on whether surrounding objects were the same color as the target. This stripped-down demonstration of the effect provides additional evidence that people infer described objects are atypical even when they likely do not have strong expectations that the object categories have a stereotypical color (as they may with fruit). It is an open and interesting question whether people's prior expectations about a category's feature distribution would modulate or extinguish this effect. This demonstration is evidence that the effect generalizes beyond fruit; we leave a systematic investigation of that question to future work.
 
-```{r tetris-plot}
+```{r tetris-plot, cache = FALSE}
 tetris_labels <- rasterGrob(png::readPNG(here("writing/figs/tetris_plot_labels.png")), interpolate = TRUE)
 
 
@@ -759,9 +759,6 @@ plot <- ggplot(tetris_mean_data, aes(x = utterance, color = context, group = con
   ylab("Prevalence judgment") +
   xlab("Utterance type") +
   scale_color_ptol() +
-  geom_dl(aes(label = context, y = empirical_stat), 
-          position = position_dodge(.5),
-          method = list(dl.trans(x = x + 1, y = y - .7), "first.points", cex=.7)) +
 theme(
   strip.background = element_blank(),
   strip.text.x = element_blank(),

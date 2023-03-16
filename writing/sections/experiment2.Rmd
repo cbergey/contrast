@@ -70,7 +70,7 @@ grid::grid.raster(img)
 
 ### Participants.
 
-240 participants were recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and the other half of participants were assigned to a condition in which the critical feature was size (small or big). Participants were paid $0.30. Participants were told the task was estimated to take 3 minutes and on average took 118 seconds to complete the trials (not including reading the consent form).
+240 participants were recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and the other half of participants were assigned to a condition in which the critical feature was size (small or big). Participants were paid $0.30. Participants were told the task was estimated to take 3 minutes and on average took 118 seconds to complete the task (not including reading the consent form).
 
 ### Stimuli & Procedure.
 
@@ -145,7 +145,7 @@ walk2(c("e2_no_adj_search_contrast", "e2_no_adj_search_same"),
       ~ make_text_vars(e2_model_no_adj, .x, .y))
 ```
 
-```{r e2-results, fig.cap = "Prevalence judgments from Experiment 2. Participants consistently judged the target object as less typical of its category when the referent was described with an adjective (e.g., \"Pass me the blue toma\") than when it was not (e.g., \"Pass me the toma\"). This inference was not significantly modulated by object context (examples shown above each figure panel).", fig.height = 4, fig.width = 6.46}
+```{r e2-results}
 labels <- rasterGrob(png::readPNG(here("writing/figs/e2_plot_labels.png")), interpolate = TRUE)
 
 
@@ -168,11 +168,11 @@ theme(
   legend.position = "none")
 
 
-grid.arrange(labels, plot, nrow = 2,
-             widths = c(1,19),
-             heights = c(2,5),
-             layout_matrix = rbind(c(NA, 1),
-                                   c(2)))
+# grid.arrange(labels, plot, nrow = 2,
+#              widths = c(1,19),
+#              heights = c(2,5),
+#              layout_matrix = rbind(c(NA, 1),
+#                                    c(2)))
 ```
 
 Our key test is whether participants infer that a mentioned feature is less typical than one that is not mentioned. In addition, we tested whether inferences of atypicality are modulated by context. One way to test this is to analyze the interaction between utterance type and context, seeing if the difference between adjective and no adjective utterances is larger when the adjective was highly redundant or smaller when the adjective was necessary for reference.
@@ -188,7 +188,7 @@ Description is often used not to distinguish among present objects, but to pick 
 
 Unlike Experiment 1, in which people made stronger contrastive inferences for size than color, there were not substantial differences between people's inferences about color and size in Experiment 2. If an account based on production norms is correct, this suggests that people track both how often people use color compared to size description and also for what purpose--contrasting with present objects or with the referent's category. That is, color description may be more likely to be used superfluously with respect to present objects but informatively with respect to the category. Indeed, color description that seems overdescriptive with respect to object context often occurs when the category has many-colored members (e.g., t-shirts) or when the object's color is atypical [@rubio-fernandez_how_2016]. However, our results are consistent with several potential explanations of the color-size asymmetry (or lack thereof). Future work addressing the source of the color-size asymmetry will need to explain differences in its extent when distinguishing among present objects compared to the referent's category.
 
-Another interpretation of people's inferences in the size condition is that they are due to size adjectives being relative gradable adjectives. That is, the phrases "big toma" and "small toma" may inherently carry the meaning "big for a toma" and "small for a toma" (which can be interpreted as an aspect of the adjective's semantics, not pragmatics; see discussion in Experiment 1). It is possible to attribute people's atypicality inferences in the size condition to the relative gradable nature of size adjectives. However, people also made these inferences about color adjectives, which are not relative gradable adjectives. This kind of explanation also might predict that people's inferences about color and size would be different—for instance, that people would make larger atypicality inferences about size than color—which we do not find. Though we find it parsimonious here to explain the color and size inferences by the same mechanism, we acknowledge the possibility that the semantics of size adjectives contribute to people's inferences of atypicality.
+Another interpretation of people's inferences in the size condition is that they are due to size adjectives being relative gradable adjectives. That is, the phrases "big toma" and "small toma" may inherently carry the meaning "big for a toma" and "small for a toma" (which can be interpreted as an aspect of the adjective's semantics, not pragmatics; see discussion in Experiment 1). It is possible to attribute people's atypicality inferences in the size condition to the relative gradable nature of size adjectives. However, people also made these inferences about color adjectives, which are not relative gradable adjectives. This kind of explanation also might predict that people's inferences about color and size would be different—for instance, that people would make larger atypicality inferences about size than color—which we do not find. Though we find it parsimonious here to explain the color and size inferences by the same mechanism (pragmatic reasoning), the semantics of size adjectives may contribute to people's inferences of atypicality in the size condition.
 
 ## Model
 
@@ -202,7 +202,7 @@ We model the speaker as reasoning about the listener's label verification proces
 
 If speakers use this utility function, a listener who does not know the feature distribution for a category can use a speaker's utterance to infer it. Intuitively, a speaker should prefer not to modify nouns with adjectives because they incur a cost for producing an extra word. If they did use an adjective, it must be because they thought the learner would have a difficult time finding the referent from a bare noun alone because of typicality, competing referents, or both. To infer the true prevalence of the target feature in the category, learners combine the speaker's utterance with their prior beliefs about the feature distribution. 
 
-We model the learner's prior about the prevalence of features in any category as a $\text{Beta}$ distribution with two parameters $\alpha$ and $\beta$ that encode the number of hypothesized prior psuedo-exemplars with the feature and without feature that the learner has previously observed (e.g., one red dax and one blue dax or one big dax and one small dax). We assume that the learner believes they have previously observed one hypothetical psuedo-examplar of each type, which is a weak symmetric prior indicating that the learner expects features to occur in half of all members of a category on average, but would find many levels of prevalence  unsurprising. To model the learner's direct experience with the category, we add the observed instances in the experiment to these hypothesized prior instances. After observing one member of the target category with the relevant feature and one without, the listener's prior is thus updated to be $\text{Beta}\left(2,\,2\right)$. Thus, we model learners as believing the feature prevalence is roughly 50% based on their initial priors and direct observation in the trial; they then combine this knowledge of the feature distribution with their pragmatic inference about the utterance to arrive at a final prevalence judgment.
+We model the learner's prior about the prevalence of features in any category as a $\text{Beta}$ distribution with two parameters $\alpha$ and $\beta$ that encode the number of hypothesized prior psuedo-exemplars with the feature and without feature that the learner has previously observed (e.g., one red dax and one blue dax or one big dax and one small dax). (Note that the $\alpha$ parameter of this $\text{Beta}$ distribution is separate from the $\alpha$ parameter used to represent the rationality parameter.) We assume that the learner believes they have previously observed one hypothetical psuedo-examplar of each type, which is a weak symmetric prior indicating that the learner expects features to occur in half of all members of a category on average, but would find many levels of prevalence  unsurprising. To model the learner's direct experience with the category, we add the observed instances in the experiment to these hypothesized prior instances. After observing one member of the target category with the relevant feature and one without, the listener's prior is thus updated to be $\text{Beta}\left(2,\,2\right)$. Thus, we model learners as believing the feature prevalence is roughly 50% based on their initial priors and direct observation in the trial; they then combine this knowledge of the feature distribution with their pragmatic inference about the utterance to arrive at a final prevalence judgment.
 
 ```{r e2-webppl-markedness, eval = FALSE}
 markedness_utterances <- tibble(utterance = c("toma", "red toma"),
@@ -303,7 +303,9 @@ ggplot(e2_parameters, aes(x = value, fill = parameter)) +
   theme(legend.position = c(.8, .8))
 ```
 
-As in Experiment 1, we encoded potential differences between people's inferences about color and size in feature rationality parameters, which we estimated separately for Experiment 2. In contrast to Experiment 1, the absolute values of these parameters are driven largely by the number of pseudo-exemplars assumed by the listener prior to exposure. Thus, the feature rationality parameters inferred in the two experiments are not directly comparable. However, differences between color and size within each model are interpretable. As in Experiment 1, we found that listeners inferred speakers to be more rational when using size adjectives (`r e2_size_parameter$mean` [`r e2_size_parameter$ci_lower`, `r e2_size_parameter$ci_upper`]) than color adjectives (`r e2_color_parameter$mean` [`r e2_color_parameter$ci_lower`, `r e2_color_parameter$ci_upper`]), but the two inferred confidence intervals were overlapping, suggesting that people treated size and color adjectives similarly when making inferences about typicality.
+As in Experiment 1, we encoded potential differences between people's inferences about color and size in feature rationality parameters, which we estimated separately for Experiment 2. To determine the value of the rationality parameter that best describes participants' behavior in each condition, we again used Bayesian data analysis, estimating the posterior probability of the observed data under each possible value of $\alpha$ multiplied by the prior probability of each of those values. To estimate the parameter value in condition, $\alpha$ was drawn from a Gamma distribution with shape and scale parameters set to 2 ($Gamma\left(2,2\right)$), and we sampled using Markov Chain Monte Carlo (MCMC) sampling.
+
+In contrast to Experiment 1, the absolute values of these parameters are driven largely by the number of pseudo-exemplars assumed by the listener prior to exposure. Thus, the absolute values of these feature rationality parameters inferred in the two experiments are not directly comparable. However, differences between color and size within each model are interpretable. As in Experiment 1, we found that listeners inferred speakers to be more rational when using size adjectives (`r e2_size_parameter$mean` [`r e2_size_parameter$ci_lower`, `r e2_size_parameter$ci_upper`]) than color adjectives (`r e2_color_parameter$mean` [`r e2_color_parameter$ci_lower`, `r e2_color_parameter$ci_upper`]), but the two inferred confidence intervals were overlapping, suggesting that people treated size and color adjectives similarly when making inferences about typicality.
 
 ```{r e2-empirical, eval = FALSE}
 e2_utterances <- expand_grid(utterance = c("toma", "red toma"),
@@ -345,7 +347,7 @@ e2_inference_means <- e2_inference %>%
   summarise(p = mean(p))
 ```
 
-```{r e2-wppl-plot, fig.height = 4, fig.width = 6.46, fig.cap = "Participants' prevalence judgments from Experiment 2, compared to model predictions (horizontal lines)."}
+```{r e2-wppl-plot, fig.height = 4, fig.width = 6.46, fig.cap = "Prevalence judgments from Experiment 2, along with our model predictions. Participants consistently judged the target object as less typical of its category when the referent was described with an adjective (e.g., \"Pass me the blue toma\") than when it was not (e.g., \"Pass me the toma\"). This inference was not significantly modulated by object context (examples shown above each figure panel). Solid horizontal lines indicate model predictions."}
 e2_wppl_data <- e2_inference_means %>%
   mutate(p = 100 * p) %>%
   rename(empirical_stat = p, adjective = utterance,

@@ -66,7 +66,7 @@ To strengthen our findings in a way that would allow us to better detect potenti
 
 ### Participants.
 
-A pre-registered sample of 400 participants was recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and half of the participants were assigned to a condition in which the critical feature was size (small or big). Participants were paid $0.30. Participants were told the task was estimated to take 3 minutes and on average they took 135 seconds to complete the trials (not including reading the consent form).
+A pre-registered sample of 400 participants was recruited from Amazon Mechanical Turk. Half of the participants were assigned to a condition in which the critical feature was color (red, blue, purple, or green), and half of the participants were assigned to a condition in which the critical feature was size (small or big). Participants were paid $0.30. Participants were told the task was estimated to take 3 minutes and on average they took 135 seconds to complete the task (not including reading the consent form).
 
 ### Stimuli & Procedure.
 
