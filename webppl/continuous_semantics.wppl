@@ -1,5 +1,7 @@
-var alpha = 1
-var epsilon = .0001
+var alpha = 5
+var costWeight = .1
+var epsilon = 0.0001
+
 var objects1 = [{color: "blue", shape: "toma", string: "blue toma"},
                {color: "blue", shape: "dax", string: "blue dax"},
                {color: "red", shape: "toma", string: "red toma"}]
@@ -10,8 +12,8 @@ var objects2 = [{color: "blue", shape: "dax", string: "blue dax"},
 
 
 // set of utterances
-var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma"]
-var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax"]
+var utterances1 = ["toma", "dax", "blue toma", "blue dax", "red toma", "red dax"]
+var utterances2 = ["toma", "dax", "blue toma", "blue dax", "red dax", "red toma"]
 
 
 var worlds = [{objects: objects1, utterances: utterances1,
@@ -36,33 +38,28 @@ var objectPrior = function(objects, priors) {
 }
 
 // meaning function to interpret the utterances
-var meaning = function(utterance, obj, size_semvalue, color_semvalue){
+var meaning = function(utterance, obj, color_semvalue){
 	var splitWords = utterance.split(' ')
 
   if (splitWords.length == 1) {
     var word = splitWords[0]
   	return Math.log(_.includes(obj, word) + epsilon)
-
   } else if (splitWords.length == 2) {
-
 		var modifier = splitWords[0]
 		var right_shape = + _.includes(obj, splitWords[1])
 
-		if(_.includes(colors, modifier)) {
-			var color_accuracy = _.includes(obj, modifier) ? color_semvalue : 1 -color_semvalue
-            return Math.log(right_shape * color_accuracy + epsilon)
-		} else if(_.includes(sizes, modifier)) {
-			var size_accuracy = _.includes(obj, modifier) ? size_semvalue : 1 -size_semvalue
-			return Math.log(right_shape * size_accuracy + epsilon)
-		}
+    if(_.includes(colors, modifier)) {
+			var color_accuracy = _.includes(obj, modifier) ? color_semvalue : 1 - color_semvalue
+      return Math.log(right_shape * color_accuracy + epsilon)
+    }
 	} else console.error("bad utterance length: " + splitWords.length)
 }
 
 // literal listener
-var literalListener = cache(function(world, utterance, size_semvalue, color_semvalue){
+var literalListener = cache(function(world, utterance, color_semvalue){
   return Infer({method: "enumerate"}, function(){
     var obj = objectPrior(world.objects, world.ps);
-    factor(meaning(utterance, obj, size_semvalue, color_semvalue))
+    factor(meaning(utterance, obj, color_semvalue)) //changing btwn factor and condition allowed for param estimation
     return obj
   })
 })
@@ -72,33 +69,123 @@ var utterancePrior = function(utterances) {
   var utterance = uniformDraw(utterances)
   return utterance
 }
-//cost is number of words
+
+// cost is number of words
 var cost = function(utterance) {
  return Math.log(utterance.split(" ").length + 1)
- //return 0
 }
+
 // pragmatic speaker
-var speaker = cache(function(world, obj, size_semvalue, color_semvalue){
+var speaker = cache(function(world, obj, color_semvalue){
   return Infer({method: "enumerate"}, function(){
     var utterance = uniformDraw(world.utterances)
-    factor(alpha * (literalListener(world, utterance, size_semvalue, color_semvalue).score(obj) - cost(utterance)))
+    factor(alpha * (literalListener(world, utterance, color_semvalue).score(obj)
+                    - costWeight * cost(utterance)))
     return utterance
   })
 })
 
 // pragmatic listener
-var pragmaticListener = cache(function(vals){
+var pragmaticListener = cache(function(vals, color_semvalue){
   var all_values = vals.split(",")
   var this_utterance = all_values[0]
-  var size_semvalue = all_values[1]
-  var color_semvalue = all_values[2]
   return Infer({method:"enumerate"}, function() {
     var world = worldsPrior()
     var obj = objectPrior(world.objects, world.ps)
-    factor(speaker(world, obj, size_semvalue, color_semvalue).score(this_utterance))
+    factor(speaker(world, obj, color_semvalue).score(this_utterance))
     var world_string = world.string
     return{obj, world_string}
   })
 })
 
-pragmaticListener(_.first(data))
+var sem_prior = Uniform({a: 0, b: 1})
+
+var gaussianKernel = function(prevVal) {
+  return Gaussian({mu: prevVal, sigma: .5});
+};
+
+var modelPosterior = function() {
+  Infer({method: "MCMC", samples: 5000, burn: 2000, verbose: true,
+    model() {
+      var sem_value = sample(sem_prior)
+
+      var posterior_dax = pragmaticListener("dax", sem_value)
+      var posterior_blue_dax = pragmaticListener("blue dax", sem_value)
+
+      var newScore = map(function(x) {x.utt == "dax" ?
+          posterior_dax.score({"obj": x.obj, "world_string": x.world}) :
+          posterior_blue_dax.score({"obj": x.obj, "world_string": x.world})},
+      empiricalData)
+
+      factor(_.sum(newScore))
+
+      return sem_value
+    }
+  })
+}
+
+
+/*
+console.log(JSON.stringify(speaker(worlds[0], 'blue toma', 1), null, 2))
+console.log(JSON.stringify(speaker(worlds[0], 'blue dax', .8), null, 2))
+
+var out = pragmaticListener('dax', 1)
+console.log('color, noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('color, noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+var out = pragmaticListener('blue dax', 1)
+console.log('color, adj_noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('color, adj_noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+console.log('===============')
+var out = pragmaticListener('dax', 0.8)
+console.log('size, noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('size, noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+var out = pragmaticListener('blue dax', 0.8)
+console.log('size, adj_noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('size, adj_noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+*/
+/*
+// using semantic values inferred from all data...
+var out = pragmaticListener('dax', 0.79)
+console.log('color sem parameter = 0.79')
+console.log('color, noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('color, noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+var out = pragmaticListener('blue dax', 0.79)
+console.log('color, adj_noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('color, adj_noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+console.log('===============')
+var out = pragmaticListener('dax', 0.92)
+console.log('size sem parameter = 0.92')
+console.log('size, noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('size, noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+var out = pragmaticListener('blue dax', 0.92)
+console.log('size, adj_noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('size, adj_noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+*/
+// using semantic values with expected values
+var out = pragmaticListener('dax', 0.99)
+console.log('color sem parameter = 0.99')
+console.log('color, noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('color, noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+var out = pragmaticListener('blue dax', 0.99)
+console.log('color, adj_noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('color, adj_noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+console.log('===============')
+var out = pragmaticListener('dax', 0.8)
+console.log('size sem parameter = 0.8')
+console.log('size, noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('size, noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+var out = pragmaticListener('blue dax', 0.8)
+console.log('size, adj_noun, target', Math.exp(out.score({obj: 'blue dax', world_string: 'two dax'})))
+console.log('size, adj_noun, lure', Math.exp(out.score({obj: 'blue dax', world_string: 'two toma'})))
+
+
+modelPosterior()
