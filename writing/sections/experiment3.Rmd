@@ -129,7 +129,9 @@ e3_full_model_no_alien <- e3_model_data %>%
   select(-effect, -group) %>%
   mutate(p.value = papaja::printp(p.value))
 
-make_text_vars(e3_full_model_no_alien, "e3_noalien_adj", "utttypeadj")
+walk2(c("e3_noalien_adj", "e3_noalien_contrast", "e3_noalien_contrast_adj"),
+               c("utttypeadj", "searchtypecontrast", "utttypeadj:searchtypecontrast"),
+               ~make_text_vars(e3_full_model_no_alien, .x, .y))
 
 e3_all_adj_model <- e3_model_data %>%
   filter(utttype == "adj") %>%
@@ -202,9 +204,9 @@ The effects of context type (within-category or between-category) and adjective 
 
 Thus, participants inferred that an object referred to in an intelligible utterance with no description was more typical of its category on the target feature than an object referred to with an alien utterance. Participants did not substantially adjust their inferences based on the object context. The marginal interactions between the within-category context and both the adjective and no adjective utterance types suggest that people might have judged the target feature as slightly more prevalent in the within-category context when intelligible utterances (with a bare noun or with an adjective) were used compared to the alien utterance. If people are discounting their atypicality inferences when the adjective is necessary for reference, we should expect them to have slightly higher typicality judgments in the within-category context when an adjective is used, and this marginal interaction suggests that this may be the case. However, since typicality judgments in the no adjective utterance type are also marginally greater in the within-category context, and because judgments in the alien utterance conditions (the reference category) also directionally move between the two context conditions, it is hard to interpret whether this interaction supports the idea that people are discounting their typicality judgments based on context.
 
-Given that interpretation of these results with respect to the alien utterance condition can be difficult, we pre-registered a version of the same full model excluding alien utterance trials, with the *noun* utterance type as the reference level. This model revealed a significant effect of utterance type: participants' prevalence judgments were lower in the *adjective noun* trials than the *noun* trials ($\beta =$ `r e3_noalien_adj_estimate`, $t =$ `r e3_noalien_adj_statistic`, $p =$ `r e3_noalien_adj_p.value`). No other effects were significant. This replicates the main effect of interest: when an adjective is used in referring to the object, participants infer that the described feature is less typical of that object's category than when the feature goes unmentioned. It also shows that the possibility that people may discount their typicality judgments based on context (suggested by the marginal interaction described above) is not supported when we compare the *noun* and *adjective noun* utterance types directly. In the Supplemental Materials, we report two more pre-registered tests of the effect of utterance type alone on prevalence judgments whose results are consistent with the models reported here.
+Given that interpretation of these results with respect to the alien utterance condition can be difficult, we pre-registered a version of the same full model excluding alien utterance trials, with the *noun* utterance type as the reference level. This model revealed a significant effect of utterance type: participants' prevalence judgments were lower in the *adjective noun* trials than the *noun* trials ($\beta =$ `r e3_noalien_adj_estimate`, $t =$ `r e3_noalien_adj_statistic`, $p =$ `r e3_noalien_adj_p.value`). There was no significant effect of context, though numerically people made higher prevalence judgments in the within-category context ($\beta =$ `r e3_noalien_contrast_estimate`, $t =$ `r e3_noalien_contrast_statistic`, $p =$ `r e3_noalien_contrast_p.value`). There was no significant interaction between utterance type and context type ($\beta =$ `r e3_noalien_contrast_adj_estimate`, $t =$ `r e3_noalien_contrast_adj_statistic`, $p =$ `r e3_noalien_contrast_adj_p.value`). No other effects were significant. This replicates the main effect of interest: when an adjective is used in referring to the object, participants infer that the described feature is less typical of that object's category than when the feature goes unmentioned. It also shows that the possibility that people may discount their typicality judgments based on context (suggested by the marginal interaction described above) is not supported when we compare the *noun* and *adjective noun* utterance types directly. In the Supplemental Materials, we report two more pre-registered tests of the effect of utterance type alone on prevalence judgments whose results are consistent with the models reported here. 
 
-As in Experiment 2, our test of whether participants' inferences are modulated by context is potentially complicated by people making distinct inferences when an adjective is necessary but *not* used. Thus, we additionally tested whether participants' inferences varied by context among only *noun* trials and only *adjective noun* trials, separately. Testing only *noun* trials checks directly whether people make higher typicality judgments when an adjective is necessary but not used, compared to when it is not necessary and not used. To check this, we fit a model on only *noun* trials, with effects of context and feature type and their interaction, as well as random slopes by subject (not pre-registered). Participants' inferences among only *noun* trials did not significantly differ by context ($\beta_{within} =$ `r e3_no_adj_contrast_estimate`, $t_{within} =$ `r e3_no_adj_contrast_statistic`, $p_{within} =$ `r e3_no_adj_contrast_p.value`). In the same way, we tested whether people's inferences varied by context among only *adjective noun* trials: this is a test of context effects that could not have been caused (or masked) by people's inferences about adjective omission. Participants' inferences among only *adjective noun* trials did not significantly differ by context ($\beta_{within} =$ `r e3_all_adj_contrast_estimate`, $t_{within} =$ `r e3_all_adj_contrast_statistic`, $p_{within} =$ `r e3_all_adj_contrast_p.value`). Thus, participants' inferences did not significantly differ between contexts, whether tested by the interaction between utterance type and contexts or by the effect of context among only utterances with or without an adjective.
+As in Experiment 2, our test of whether participants' inferences are modulated by context is potentially complicated by people making distinct inferences when an adjective is necessary but *not* used. Thus, we additionally tested whether participants' inferences varied by context among only *noun* trials and only *adjective noun* trials, separately. Testing only *noun* trials checks directly whether people make higher typicality judgments when an adjective is necessary but not used, compared to when it is not necessary and not used. To check this, we fit a model on only *noun* trials, with effects of context and feature type and their interaction, as well as random slopes by subject (not pre-registered). Participants' inferences among only *noun* trials did not significantly differ by context ($\beta_{within} =$ `r e3_no_adj_contrast_estimate`, $t_{within} =$ `r e3_no_adj_contrast_statistic`, $p_{within} =$ `r e3_no_adj_contrast_p.value`). In the same way, we tested whether people's inferences varied by context among only *adjective noun* trials: this is a test of context effects that could not have been caused (or masked) by people's inferences about adjective omission. Participants' inferences among only *adjective noun* trials did not significantly differ by context ($\beta_{within} =$ `r e3_all_adj_contrast_estimate`, $t_{within} =$ `r e3_all_adj_contrast_statistic`, $p_{within} =$ `r e3_all_adj_contrast_p.value`). Numerically, people's prevalence judgments were slightly higher in the within-category context, but these effects were not significant. Thus, participants' inferences did not significantly differ between contexts, whether tested by the interaction between utterance type and contexts or by the effect of context among only utterances with or without an adjective.
 
 ```{r e3-rsa, eval = FALSE}
 e3_null_inference <- webppl(program_file = 
@@ -239,11 +241,18 @@ e3_wppl_data <- e2_wppl_data %>%
          searchtype = factor(searchtype, levels = c("different", "contrast")))
 ```
 
-```{r e3-wppl-plot, fig.cap = "Participants' prevalence judgments in Experiment 3, with model predictions using the parameters estimated in Experiment 2 (horizontal lines)."}
+```{r e3-wppl-plot, fig.cap = "Participants' prevalence judgments in Experiment 3, with model predictions using the parameters estimated in Experiment 2. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid horizontal lines indicate model predictions."}
 
 labels <- rasterGrob(png::readPNG(here("writing/figs/e3_plot_labels.png")), interpolate = TRUE)
 
-plot <- ggplot(e3_mean_data %>% mutate(searchtype = factor(searchtype, levels = c("contrast", "different"))), 
+plot <- ggplot(e3_mean_data %>% 
+                 mutate(searchtype = factor(searchtype, levels = c("contrast", "different")),
+                        adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[red/small] toma\"", 
+                                              adjective == "noun" ~ "noun\n\"toma\"",
+                                          adjective == "alien utterance" ~ "alien utterance"),
+                        adjective = factor(adjective, levels = c("noun\n\"toma\"",
+                                                                 "adjective noun\n\"[red/small] toma\"",
+                                                                 "alien utterance"))), 
                aes(x = adjective, y = empirical_stat, 
                          color = condition, fill = condition)) + 
   facet_wrap(~ searchtype) +
@@ -254,7 +263,10 @@ plot <- ggplot(e3_mean_data %>% mutate(searchtype = factor(searchtype, levels = 
                   position = position_dodge(.5)) + 
   geom_crossbar(aes(ymin = empirical_stat, ymax = empirical_stat, y = empirical_stat),
                 position = position_dodge(.5), width = .5,
-           alpha = .5, size = .5, data = e3_wppl_data) + 
+           alpha = .5, size = .5, data = e3_wppl_data %>%
+             mutate(adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[red/small] toma\"", 
+                                              adjective == "noun" ~ "noun\n\"toma\"",
+                                          adjective == "alien utterance" ~ "alien utterance"))) + 
   geom_hline(aes(yintercept = 50), linetype = "dashed") +
   geom_dl(aes(label = condition, y = empirical_stat), 
           position = position_dodge(.5),
