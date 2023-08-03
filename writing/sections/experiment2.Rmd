@@ -365,7 +365,7 @@ e2_inference_means <- e2_inference %>%
   summarise(p = mean(p))
 ```
 
-```{r e2-wppl-plot, fig.height = 4, fig.width = 6.46, fig.cap = "Prevalence judgments from Experiment 2, along with our model predictions. Participants consistently judged the target object as less typical of its category when the referent was described with an adjective (e.g., \"Pass me the blue toma\") than when it was not (e.g., \"Pass me the toma\"). This inference was not significantly modulated by object context (examples shown above each figure panel). Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid horizontal lines indicate model predictions."}
+```{r e2-wppl-plot, fig.height = 5, fig.width = 6.46, fig.cap = "Prevalence judgments from Experiment 2, along with our model predictions. Top rows depict example displays for different object contexts (manipulated within subjects), for both the color and size conditions (manipulated between subjects). Participants consistently judged the target object as less typical of its category when the referent was described with an adjective (e.g., \"Pass me the [blue/big] toma\") than when it was not (e.g., \"Pass me the toma\"). This inference was not significantly modulated by object context. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid horizontal lines indicate model predictions."}
 e2_wppl_data <- e2_inference_means %>%
   mutate(p = 100 * p) %>%
   rename(empirical_stat = p, adjective = utterance,
@@ -389,10 +389,10 @@ labels <- rasterGrob(png::readPNG(here("writing/figs/e2_plot_labels.png")), inte
 plot_model2 <- ggplot(e2_mean_data %>% mutate(searchtype = factor(searchtype, 
                                                            levels = c("contrast", "different", "same")),
                                               adjective = case_when(
-                                                adjective == "adjective noun" ~ "adjective noun\n\"[red/small] toma\"",
+                                                adjective == "adjective noun" ~ "adjective noun\n\"[blue/big] toma\"",
                                                 adjective == "noun" ~ "noun\n\"toma\""),
                                               adjective = factor(adjective, levels = c("noun\n\"toma\"",
-                                                                 "adjective noun\n\"[red/small] toma\""))),
+                                                                 "adjective noun\n\"[blue/big] toma\""))),
                       aes(x = adjective, y = empirical_stat, 
                          color = condition)) + 
   facet_wrap(~ searchtype) +
@@ -404,7 +404,7 @@ plot_model2 <- ggplot(e2_mean_data %>% mutate(searchtype = factor(searchtype,
   geom_crossbar(aes(ymin = empirical_stat, ymax = empirical_stat, y = empirical_stat),
                 position = position_dodge(.5), width = .5,
            alpha = .5, size = .5, data = e2_wppl_data %>% mutate(adjective = case_when(
-                                                adjective == "adjective noun" ~ "adjective noun\n\"[red/small] toma\"",
+                                                adjective == "adjective noun" ~ "adjective noun\n\"[blue/big] toma\"",
                                                 adjective == "noun" ~ "noun\n\"toma\""))) + 
   geom_hline(aes(yintercept = 50), linetype = "dashed") +
   scale_color_ptol() +
@@ -417,12 +417,11 @@ plot_model2 <- ggplot(e2_mean_data %>% mutate(searchtype = factor(searchtype,
   )
 
 grid.arrange(labels, plot_model2, nrow = 2,
-             widths = c(1,19),
-             heights = c(2,5),
-             layout_matrix = rbind(c(NA, 1),
+             widths = c(20),
+             heights = c(6,10),
+             layout_matrix = rbind(c(1),
                                    c(2)))
 ```
-
 
 Figure \ref{fig:e2-wppl-plot} shows the predictions of our Rational Speech Act model compared to empirical data from participants. The model captures the trends in the data correctly, inferring that a feature was less prevalent in the category when it was mentioned (e.g., "red dax") than when it was not mentioned (e.g., "dax"). The model also infers the prevalence of the critical feature to be numerically higher in the within-category condition. That is, in the within-category condition when an adjective is used to distinguish between referents, the model thinks that the target color is slightly less atypical. When an adjective would be useful to distinguish between two objects of the same shape but one is not used, the model infers that the color of the target object is slightly more typical. These tendencies match the directional patterns in people's data, but people do not make significantly different inferences based on object context.
 

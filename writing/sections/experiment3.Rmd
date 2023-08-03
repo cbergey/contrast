@@ -241,17 +241,17 @@ e3_wppl_data <- e2_wppl_data %>%
          searchtype = factor(searchtype, levels = c("different", "contrast")))
 ```
 
-```{r e3-wppl-plot, fig.cap = "Participants' prevalence judgments in Experiment 3, with model predictions using the parameters estimated in Experiment 2. Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid horizontal lines indicate model predictions."}
+```{r e3-wppl-plot, fig.env = "figure", fig.height = 5, fig.width = 6.46, fig.cap = "Participants' prevalence judgments in Experiment 3, with model predictions using the parameters estimated in Experiment 2. Top rows depict example displays for different object contexts (manipulated within subjects), for both the color and size conditions (manipulated between subjects). Points indicate empirical means; error bars indicate 95\\% confidence intervals computed by non-parametric bootstrapping. Solid horizontal lines indicate model predictions."}
 
 labels <- rasterGrob(png::readPNG(here("writing/figs/e3_plot_labels.png")), interpolate = TRUE)
 
 plot <- ggplot(e3_mean_data %>% 
                  mutate(searchtype = factor(searchtype, levels = c("contrast", "different")),
-                        adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[red/small] toma\"", 
+                        adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[blue/big] toma\"", 
                                               adjective == "noun" ~ "noun\n\"toma\"",
                                           adjective == "alien utterance" ~ "alien utterance"),
                         adjective = factor(adjective, levels = c("noun\n\"toma\"",
-                                                                 "adjective noun\n\"[red/small] toma\"",
+                                                                 "adjective noun\n\"[blue/big] toma\"",
                                                                  "alien utterance"))), 
                aes(x = adjective, y = empirical_stat, 
                          color = condition, fill = condition)) + 
@@ -264,7 +264,7 @@ plot <- ggplot(e3_mean_data %>%
   geom_crossbar(aes(ymin = empirical_stat, ymax = empirical_stat, y = empirical_stat),
                 position = position_dodge(.5), width = .5,
            alpha = .5, size = .5, data = e3_wppl_data %>%
-             mutate(adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[red/small] toma\"", 
+             mutate(adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[blue/big] toma\"", 
                                               adjective == "noun" ~ "noun\n\"toma\"",
                                           adjective == "alien utterance" ~ "alien utterance"))) + 
   geom_hline(aes(yintercept = 50), linetype = "dashed") +
@@ -277,9 +277,9 @@ plot <- ggplot(e3_mean_data %>%
   legend.position = "none") 
 
 grid.arrange(labels, plot, nrow = 2,
-             widths = c(1,19),
-             heights = c(2,5),
-             layout_matrix = rbind(c(NA, 1),
+             widths = c(20),
+             heights = c(7,10),
+             layout_matrix = rbind(c(1),
                                    c(2)))
 ```
 

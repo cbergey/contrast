@@ -42,7 +42,6 @@ vignettes/*.pdf
 writing/figs/*
 */*files/*
 *.aux
-*.tex
 *.fff
 *.log
 *.RData
