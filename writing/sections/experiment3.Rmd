@@ -198,7 +198,7 @@ size_only_model <- e3_model_data %>%
 
 ```
 
-We began by fitting a pre-registered maximum mixed-effects linear model with effects of utterance type (alien utterance, *noun*, or *adjective noun*; alien utterance as reference level), context type (within category or between category), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, which resulted in a model with all fixed effects, all interactions and a random slope of utterance type by subject. The final model revealed a significant effect of the *noun* utterance type compared to the alien utterance type ($\beta =$ `r e3_full_noadj_estimate`, $t =$ `r e3_full_noadj_statistic`, $p =$ `r e3_full_noadj_p.value`) and no significant effect of the *adjective noun* utterance type compared to the alien utterance type ($\beta =$ `r e3_full_adj_estimate`, $t =$ `r e3_full_adj_statistic`, $p =$ `r e3_full_adj_p.value`). That is, people's prevalence judgments about an object's feature were higher after observing utterances such as "Pass me the blicket" than "Noba bi yix blicket," and their prevalence judgments did not differ significantly between "Noba bi yix blicket" and "Pass me the blue blicket." 
+We began by fitting a pre-registered maximum mixed-effects linear model with effects of utterance type (*noun*, *adjective noun*, or alien utterance; alien utterance as reference level), context type (within category or between category), and critical feature (color or size) as well as all interactions and random slopes of utterance type and context type nested within subject. Random effects were removed until the model converged, which resulted in a model with all fixed effects, all interactions and a random slope of utterance type by subject. The final model revealed a significant effect of the *noun* utterance type compared to the alien utterance type ($\beta =$ `r e3_full_noadj_estimate`, $t =$ `r e3_full_noadj_statistic`, $p =$ `r e3_full_noadj_p.value`) and no significant effect of the *adjective noun* utterance type compared to the alien utterance type ($\beta =$ `r e3_full_adj_estimate`, $t =$ `r e3_full_adj_statistic`, $p =$ `r e3_full_adj_p.value`). That is, people's prevalence judgments about an object's feature were higher after observing utterances such as "Pass me the toma" than "Noba bi yix toma," and their prevalence judgments did not differ significantly between "Noba bi yix toma" and "Pass me the blue toma." 
 
 The effects of context type (within-category or between-category) and adjective type (color or size) were not significant ($\beta_{within} =$ `r e3_full_contrast_estimate`, $t_{within} =$ `r e3_full_contrast_statistic`, $p_{within} =$ `r e3_full_contrast_p.value`; $\beta_{size} =$ `r e3_full_size_estimate`, $t_{size} =$ `r e3_full_size_statistic`, $p_{size} =$ `r e3_full_size_p.value`). That is, whether an adjective was necessary or unnecessary for reference, as determined by the other available referents, did not significantly affect people's prevalence judgments; nor did the feature type. There were marginal interactions between the adjective utterance type and the size condition ($\beta =$ `r e3_full_adj_size_estimate`, $t =$ `r e3_full_adj_size_statistic`, $p =$ `r e3_full_adj_size_p.value`), the adjective utterance type and the within-category context ($\beta =$ `r e3_full_adj_contrast_estimate`, $t =$ `r e3_full_adj_contrast_statistic`, $p =$ `r e3_full_adj_contrast_p.value`), and the no adjective utterance type and the within-category context ($\beta =$ `r e3_full_noadj_contrast_estimate`, $t =$ `r e3_full_noadj_contrast_statistic`, $p =$ `r e3_full_noadj_contrast_p.value`). No other effects were significant or marginally significant. 
 
@@ -247,11 +247,11 @@ labels <- rasterGrob(png::readPNG(here("writing/figs/e3_plot_labels.png")), inte
 
 plot <- ggplot(e3_mean_data %>% 
                  mutate(searchtype = factor(searchtype, levels = c("contrast", "different")),
-                        adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[blue/big] toma\"", 
+                        adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[big/blue] toma\"", 
                                               adjective == "noun" ~ "noun\n\"toma\"",
                                           adjective == "alien utterance" ~ "alien utterance"),
                         adjective = factor(adjective, levels = c("noun\n\"toma\"",
-                                                                 "adjective noun\n\"[blue/big] toma\"",
+                                                                 "adjective noun\n\"[big/blue] toma\"",
                                                                  "alien utterance"))), 
                aes(x = adjective, y = empirical_stat, 
                          color = condition, fill = condition)) + 
@@ -264,7 +264,7 @@ plot <- ggplot(e3_mean_data %>%
   geom_crossbar(aes(ymin = empirical_stat, ymax = empirical_stat, y = empirical_stat),
                 position = position_dodge(.5), width = .5,
            alpha = .5, size = .5, data = e3_wppl_data %>%
-             mutate(adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[blue/big] toma\"", 
+             mutate(adjective = case_when(adjective == "adjective noun" ~ "adjective noun\n\"[big/blue] toma\"", 
                                               adjective == "noun" ~ "noun\n\"toma\"",
                                           adjective == "alien utterance" ~ "alien utterance"))) + 
   geom_hline(aes(yintercept = 50), linetype = "dashed") +
