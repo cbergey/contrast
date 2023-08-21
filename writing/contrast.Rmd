@@ -3,25 +3,25 @@ title             : "Using contrastive inferences to learn about new words and c
 shorttitle        : "Learning from contrastive inference"
 
 author: 
-  - name          : "----"
+  - name          : "Claire Augusta Bergey"
     affiliation   : "1"
     corresponding : yes    # Define only one corresponding author
-    address       : "---- University Avenue, ----"
-    email         : "-----.edu"
-  - name          : "-----"
+    address       : "5848 S. University Avenue, Chicago, IL 60637"
+    email         : "cbergey@uchicago.edu"
+  - name          : "Daniel Yurovsky"
     affiliation   : "2"
 
 affiliation:
   - id            : "1"
-    institution   : "------"
+    institution   : "University of Chicago"
   - id            : "2"
-    institution   : "------"
+    institution   : "Carnegie Mellon University"
 
 abstract: |
   In the face of unfamiliar language or objects, description is one cue people can use to learn about both. Beyond narrowing potential referents to those that match a descriptor (e.g., "tall"), people could infer that a described object is one that contrasts with other relevant objects of the same type (e.g., "the tall cup" contrasts with another, shorter cup). This contrast may be in relation to other objects present in the environment (this cup is tall among present cups) or to the referent's category (this cup is tall for a cup in general). In three experiments, we investigate whether people use such contrastive inferences from description to learn new word-referent mappings and learn about new categories' feature distributions. People use contrastive inferences to guide their referent choice, though size---and not color---adjectives prompt them to consistently choose the contrastive target over alternatives (Experiment 1). People also use color and size description to infer that a novel object is atypical of its category (Experiments 2 and 3): utterances like "the blue toma" prompt people to infer that tomas are *less* likely to be blue in general. However, these two inferences do not trade off substantially: people infer a described referent is atypical even when the descriptor was necessary to establish reference. We model these experiments in the Rational Speech Act (RSA) framework and find that it predicts both of these inferences. Overall, people are able to use contrastive inferences from description to resolve reference and make inferences about a novel object’s category, letting them learn more about new things than literal meaning alone allows.
 
 authornote: |
-  All data and code for analyses are available at https://github.com/-------/contrast.
+  All data and code for analyses are available at https://github.com/cbergey/contrast.
 
 
 keywords          : "concept learning; contrastive inference; word learning; pragmatics; communication; computational modeling"
@@ -151,9 +151,9 @@ The core computation in pragmatic inference is reasoning about alternatives—th
 
 # Acknowledgements
 
-<!--This research was funded by James S. McDonnell Foundation Scholar Award in Understanding Human Cognition \#220020506 to DY. The funding body had no involvement in the conceptualization, data collection, or analysis of this project.
+This research was funded by James S. McDonnell Foundation Scholar Award in Understanding Human Cognition \#220020506 to DY. The funding body had no involvement in the conceptualization, data collection, or analysis of this project.
 
-The authors thank Ming Xiang and Susan Goldin-Meadow for guidance on early versions of this work and Benjamin Morris, Ashley Leung, Michael C. Frank, Ruthe Foushee, Judith Degen, and Robert Hawkins for feedback on the manuscript. Portions of this work were published in the proceedings of Experiments in Linguistic Meaning. The authors are grateful for feedback from reviewers and attendees of Experiments in Linguistic Meaning, the meeting of the Cognitive Science Society, and the Midwestern Cognitive Science Conference.-->
+The authors thank Ming Xiang and Susan Goldin-Meadow for guidance on early versions of this work and Benjamin Morris, Ashley Leung, Michael C. Frank, Ruthe Foushee, Judith Degen, and Robert Hawkins for feedback on the manuscript. Portions of this work were published in the proceedings of Experiments in Linguistic Meaning and portions were included in the dissertation of CB. The authors are grateful for feedback from reviewers and attendees of Experiments in Linguistic Meaning, the meeting of the Cognitive Science Society, and the Midwestern Cognitive Science Conference. CB also thanks Julia Aizuss, Scott Daniel, and Michael Galperin for discussions and support as this work was developed.
 
 \newpage
 
